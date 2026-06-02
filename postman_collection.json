@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "IFT3225 — Infrastructure de collecte",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "api_key", "value": "demo-key-00000001" },
+    { "key": "location", "value": "cafe-biblioparc" }
+  ],
+  "item": [
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "POST /devices — Enregistrer un appareil",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/devices",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"mon-telephone\",\n  \"location\": \"cafe-biblioparc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /devices — Lister les appareils",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/devices"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Collecte",
+      "item": [
+        {
+          "name": "POST /measurements — Mesure sonore",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/measurements",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"audio\",\n  \"value\": 52.3,\n  \"location\": \"{{location}}\",\n  \"timestamp\": \"2026-06-01T14:00:00.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /measurements — 401 sans clé",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/measurements",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"audio\",\n  \"value\": 52.3,\n  \"location\": \"{{location}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /measurements — 403 clé invalide",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/measurements",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "cle-invalide" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"audio\",\n  \"value\": 52.3,\n  \"location\": \"{{location}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /observations — Observation environnementale",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/observations",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"{{location}}\",\n  \"proximity\": \"medium\",\n  \"vibe\": \"modéré\",\n  \"notes\": \"Quelques clients, musique de fond\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ambiance (sémantique)",
+      "item": [
+        {
+          "name": "GET /ambiance/:location/snapshot",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ambiance/{{location}}/snapshot"
+          }
+        },
+        {
+          "name": "GET /ambiance/:location/history?last=3h",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ambiance/{{location}}/history?last=3h",
+              "query": [{ "key": "last", "value": "3h" }]
+            }
+          }
+        },
+        {
+          "name": "GET /ambiance/:location/history?last=6h",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ambiance/{{location}}/history?last=6h",
+              "query": [{ "key": "last", "value": "6h" }]
+            }
+          }
+        },
+        {
+          "name": "GET /ambiance/:location/quiet-hours",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ambiance/{{location}}/quiet-hours"
+          }
+        }
+      ]
+    }
+  ]
+}
