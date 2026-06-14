@@ -96,6 +96,6 @@ Il interroge Phyphox toutes les 5 secondes et POST les mesures vers `/measuremen
 ## Équipe
 
 - Rayyan Oumlil
-- [Partenaire]
+- Aness Lakhdar Azzouz
 
 Université de Montréal — IFT3225, session Été 2026
