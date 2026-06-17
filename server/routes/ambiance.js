@@ -126,6 +126,10 @@ router.get('/:location/quiet-hours', async (req, res) => {
       { $sort: { _id: 1 } }
     ]).toArray();
 
+    if (stats.length === 0) {
+      return res.status(404).json({ success: false, error: 'Aucune mesure pour ce lieu' });
+    }
+
     const quietHours = stats
       .filter(s => s.avgDb < QUIET_THRESHOLD_DB && s.sampleCount >= MIN_SAMPLES)
       .map(s => ({

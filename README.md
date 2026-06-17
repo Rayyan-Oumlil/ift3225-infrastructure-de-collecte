@@ -97,7 +97,7 @@ x-api-key: <votre-cle>
 - `401` — en-tête absent
 - `403` — clé invalide ou appareil inconnu
 
-Obtenir une clé : `POST /devices` avec `{ "name": "mon-telephone", "location": "bibliotheque" }`.
+Obtenir une clé : `POST /devices` avec `{ "name": "mon-telephone", "location": "cafe-brunch" }`.
 
 ## Tests avec Postman
 
