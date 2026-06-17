@@ -1,0 +1,26 @@
+{
+  "_comment": "Observations environnementales saisies manuellement. proximity ∈ {low, medium, high}; vibe ∈ {calme, modéré, animé, bruyant}.",
+  "observations": [
+    {
+      "location": "cafe-brunch",
+      "proximity": "low",
+      "vibe": "calme",
+      "notes": "Mercredi matin vers 9h45 : café presque vide, deux ou trois habitués installés avec leur portable. On entend surtout la machine à espresso et une playlist de musique. La table occupée la plus proche est à l'autre bout de la salle.",
+      "timestamp": "2026-06-17T09:43:51.218-04:00"
+    },
+    {
+      "location": "cafe-brunch",
+      "proximity": "medium",
+      "vibe": "modéré",
+      "notes": "Mercredi, heure du lunch : environ la moitié des tables occupées, brouhaha de conversations entrecoupé de tintements de vaisselle. La source de bruit la plus proche est une table de collègues juste à côté qui discutent boulot.",
+      "timestamp": "2026-06-17T12:01:07.842-04:00"
+    },
+    {
+      "location": "cafe-brunch",
+      "proximity": "high",
+      "vibe": "bruyant",
+      "notes": "Brunch du dimanche, salle comble : familles et groupes d'amis, des enfants qui crient, la musique montée plus fort pour couvrir le vacarme. File d'attente jusqu'à la porte et voisins de table à moins d'un mètre.",
+      "timestamp": "2026-06-14T10:11:29.564-04:00"
+    }
+  ]
+}

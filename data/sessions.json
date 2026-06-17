@@ -1,0 +1,20 @@
+{
+  "_comment": "Mapping dossier (dans data/raw-data/) → location + label. Le script lit meta/time.csv pour l'heure de début automatiquement.",
+  "sessions": [
+    {
+      "folder": "Cafe-9h-Semaine",
+      "location": "cafe-brunch",
+      "label": "Matin semaine 9h — calme"
+    },
+    {
+      "folder": "Cafe-Midi-Semaine",
+      "location": "cafe-brunch",
+      "label": "Midi semaine 12h — modere"
+    },
+    {
+      "folder": "Cafe-Brunch-Weekend",
+      "location": "cafe-brunch",
+      "label": "Brunch weekend 10h — bruyant"
+    }
+  ]
+}
