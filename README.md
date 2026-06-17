@@ -42,13 +42,18 @@ Le serveur écoute sur `http://localhost:3000` par défaut.
 | `API_KEY` | Clé API d'un device enregistré (`POST /devices`) | bridge |
 | `SERVER_URL` | URL de l'API ciblée par le bridge (défaut : `http://localhost:3000`) | bridge |
 | `LOCATION` | Identifiant du lieu de collecte | bridge |
-| `IMPORT_RESET` | `1` pour remplacer les données déjà importées | import:phyphox, import:obs |
 
 ## Données de collecte
 
-Deux façons de peupler la base :
+Trois façons de peupler la base :
 
-- **Données réelles (Phyphox)** — déposez vos exports dans `data/raw-data/<nom-session>/`, décrivez chaque session dans `data/sessions.json`, puis :
+- **Temps réel (bridge Phyphox)** — avec le téléphone sur le même réseau Wi-Fi et « Autoriser l'accès distant » activé dans Phyphox, configurer `.env` puis :
+
+```bash
+npm run bridge
+```
+
+- **Import CSV (sessions enregistrées)** — déposez vos exports dans `data/raw-data/<nom-session>/`, décrivez chaque session dans `data/sessions.json`, puis :
 
 ```bash
 npm run import:phyphox   # importe les mesures sonores
