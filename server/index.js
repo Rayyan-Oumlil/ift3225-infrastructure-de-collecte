@@ -20,6 +20,16 @@ app.get('/', (req, res) => {
   res.json({ success: true, data: 'API IFT3225 — Infrastructure de collecte' });
 });
 
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Ressource introuvable' });
+});
+
+// Gestionnaire d'erreurs centralisé
+app.use((err, req, res, next) => {
+  console.error('Erreur non gérée:', err.message);
+  res.status(err.status || 500).json({ success: false, error: 'Erreur interne du serveur' });
+});
+
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
