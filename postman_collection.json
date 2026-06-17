@@ -6,7 +6,7 @@
   "variable": [
     { "key": "base_url", "value": "http://localhost:3000" },
     { "key": "api_key", "value": "demo-key-00000001" },
-    { "key": "location", "value": "cafe-biblioparc" }
+    { "key": "location", "value": "cafe-brunch" }
   ],
   "item": [
     {
@@ -20,7 +20,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"mon-telephone\",\n  \"location\": \"cafe-biblioparc\"\n}"
+              "raw": "{\n  \"name\": \"mon-telephone\",\n  \"location\": \"cafe-brunch\"\n}"
             }
           }
         },
