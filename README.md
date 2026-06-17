@@ -33,13 +33,29 @@ npm start
 Le serveur écoute sur `http://localhost:3000` par défaut.
 
 ## Variables d'environnement
+| Variable | Description | Utilisé par |
+|----------|-------------|-------------|
+| `MONGO_URI` | URI de connexion MongoDB Atlas | serveur, seed, import |
+| `PORT` | Port d'écoute du serveur (défaut : 3000) | serveur |
+| `PHYPHOX_IP` | IP du téléphone exécutant Phyphox (accès distant) | bridge |
+| `PHYPHOX_PORT` | Port du serveur Phyphox (défaut : 8080, souvent 80) | bridge |
+| `API_KEY` | Clé API d'un device enregistré (`POST /devices`) | bridge |
+| `SERVER_URL` | URL de l'API ciblée par le bridge (défaut : `http://localhost:3000`) | bridge |
+| `LOCATION` | Identifiant du lieu de collecte | bridge |
+| `IMPORT_RESET` | `1` pour remplacer les données déjà importées | import:phyphox, import:obs |
 
-Voir `.env.example` pour la liste complète. Les variables obligatoires sont :
+## Données de collecte
 
-| Variable | Description |
-|----------|-------------|
-| `MONGO_URI` | URI de connexion MongoDB Atlas |
-| `PORT` | Port d'écoute du serveur (défaut : 3000) |
+Deux façons de peupler la base :
+
+- **Données réelles (Phyphox)** — déposez vos exports dans `data/raw-data/<nom-session>/`, décrivez chaque session dans `data/sessions.json`, puis :
+
+```bash
+npm run import:phyphox   # importe les mesures sonores
+npm run import:obs       # importe les observations environnementales
+```
+
+- **Données de démonstration** — `npm run seed` peuple rapidement la base pour tester les endpoints `/ambiance` sans collecte réelle.
 
 ## Endpoints
 
@@ -84,11 +100,12 @@ Importer la collection `postman_collection.json` (à la racine du dépôt) pour 
 
 ## Bridge Phyphox
 
-Le script de collecte automatique se trouve dans `bridge/`:
+Le script de collecte automatique en temps réel se trouve dans `server/scripts/phyphox-bridge.js` :
 
 ```bash
-# Depuis le même réseau Wi-Fi que le téléphone
-PHYPHOX_IP=192.168.x.x API_KEY=<votre-cle> npm run bridge
+# Depuis le même réseau Wi-Fi que le téléphone, avec « Autoriser l'accès distant » activé dans Phyphox
+# Configurer PHYPHOX_IP et API_KEY dans .env avant de lancer
+npm run bridge
 ```
 
 Il interroge Phyphox toutes les 5 secondes et POST les mesures vers `/measurements`.

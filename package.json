@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server/index.js",
     "seed": "node server/scripts/seed.js",
+    "import:phyphox": "node server/scripts/import-phyphox.js",
+    "import:obs": "node server/scripts/import-observations.js",
     "bridge": "node server/scripts/phyphox-bridge.js"
   },
   "dependencies": {
