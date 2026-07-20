@@ -1,5 +1,6 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { MapPage } from './pages/MapPage';
+import { DetailPage } from './pages/DetailPage';
 import './App.css';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<MapPage />} />
+          <Route path="/lieux/:name" element={<DetailPage />} />
           <Route path="*" element={<p className="page">Page introuvable.</p>} />
         </Routes>
       </main>
