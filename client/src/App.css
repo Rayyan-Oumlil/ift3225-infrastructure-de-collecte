@@ -1,0 +1,163 @@
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+.brand {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.brand span {
+  color: var(--accent);
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+.subtitle {
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* --- Carte --- */
+.map {
+  height: 460px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.ambiance-marker span {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.popup-badge {
+  margin: 6px 0;
+}
+
+/* --- Badge de classification --- */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* --- Cartes de détail --- */
+.cards {
+  display: grid;
+  gap: 16px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.portrait {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.metric {
+  font-size: 20px;
+  font-weight: 600;
+}
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+.observation {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.periods button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 3px 10px;
+  margin-left: 4px;
+  color: var(--muted);
+}
+.periods button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.quiet-hours {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.quiet-hours li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.quiet-hours .hour {
+  font-weight: 600;
+  width: 48px;
+}
+
+/* --- États (chargement / erreur / vide) --- */
+.state {
+  padding: 32px 16px;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.state--loading {
+  color: var(--muted);
+}
+.state--empty {
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.02);
+}
+.state--error {
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.06);
+}
+.state--error button {
+  margin-top: 10px;
+  border: 1px solid #c62828;
+  background: transparent;
+  color: #c62828;
+  border-radius: 6px;
+  padding: 4px 14px;
+}
