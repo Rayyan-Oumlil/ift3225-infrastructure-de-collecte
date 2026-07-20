@@ -54,6 +54,7 @@ router.get('/:location/snapshot', async (req, res) => {
       data: {
         location,
         generatedAt: new Date(),
+        scale: getScale(),
         audio: avgDb !== null ? {
           avgDb: Math.round(avgDb * 10) / 10,
           sampleCount: measurements.length,
