@@ -5,13 +5,16 @@
 import { API_BASE_URL } from '../config';
 import type {
   ApiEnvelope,
+  AuthPayload,
+  Classification,
   History,
   Location,
   LocationAmbiance,
+  MeProfile,
+  ObservationRecord,
   Proximity,
   QuietHours,
   Snapshot,
-  Classification,
 } from '../types';
 
 // Erreur applicative unifiée. `notFound` distingue le cas « vide » (404) d'une vraie panne.
@@ -29,12 +32,12 @@ export class ApiError extends Error {
 interface RequestOptions {
   method?: string;
   body?: unknown;
-  apiKey?: string; // écritures protégées (x-api-key). JWT branché plus tard (#18).
+  token?: string; // usager connecté (Authorization: Bearer <JWT>)
 }
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (opts.apiKey) headers['x-api-key'] = opts.apiKey;
+  if (opts.token) headers['Authorization'] = `Bearer ${opts.token}`;
 
   let res: Response;
   try {
@@ -98,7 +101,37 @@ export async function getLocationsWithAmbiance(): Promise<LocationAmbiance[]> {
   );
 }
 
-// ---- Écriture protégée (contrat live : x-api-key). Migrera vers JWT à la fusion de #18. ----
+// ---- Authentification ----
+
+export const register = (username: string, password: string) =>
+  request<AuthPayload>('/auth/register', { method: 'POST', body: { username, password } });
+
+export const login = (username: string, password: string) =>
+  request<AuthPayload>('/auth/login', { method: 'POST', body: { username, password } });
+
+// ---- Espace compte (JWT requis) ----
+
+export const getMe = (token: string) => request<MeProfile>('/me', { token });
+
+export const getMyObservations = (token: string) =>
+  request<ObservationRecord[]>('/me/observations', { token });
+
+export const getMyLocations = (token: string) => request<string[]>('/me/locations', { token });
+
+export const addFavorite = (location: string, token: string) =>
+  request<{ favoriteLocations: string[] }>('/me/favorites', {
+    method: 'POST',
+    body: { location },
+    token,
+  });
+
+export const removeFavorite = (location: string, token: string) =>
+  request<{ favoriteLocations: string[] }>(`/me/favorites/${seg(location)}`, {
+    method: 'DELETE',
+    token,
+  });
+
+// ---- Écriture protégée : soumission d'une observation par un usager connecté ----
 
 export interface ObservationInput {
   location: string;
@@ -108,5 +141,5 @@ export interface ObservationInput {
   timestamp?: string;
 }
 
-export const postObservation = (input: ObservationInput, apiKey: string) =>
-  request<unknown>('/observations', { method: 'POST', body: input, apiKey });
+export const postObservation = (input: ObservationInput, token: string) =>
+  request<unknown>('/observations', { method: 'POST', body: input, token });
