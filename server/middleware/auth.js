@@ -35,6 +35,30 @@ async function authMiddleware(req, res, next) {
   }
 }
 
+// Vérifie un en-tête Authorization: Bearer <JWT> et résout l'usager correspondant.
+// Partagé par resolveAuth (hybride) et requireUser (JWT strict, ex. /me).
+async function resolveUserFromHeader(authHeader) {
+  const [scheme, token] = (authHeader ?? '').split(' ');
+  if (scheme !== 'Bearer' || !token) {
+    return { error: { status: 401, message: 'En-tête Authorization mal formé (attendu: Bearer <token>)' } };
+  }
+
+  let payload;
+  try {
+    payload = verifyToken(token);
+  } catch {
+    return { error: { status: 403, message: 'Jeton invalide ou expiré' } };
+  }
+
+  const db = getDb();
+  const user = await db.collection('users').findOne({ _id: new ObjectId(payload.sub) });
+  if (!user) {
+    return { error: { status: 403, message: 'Usager introuvable' } };
+  }
+
+  return { user };
+}
+
 // Middleware hybride : accepte soit x-api-key (device) soit Authorization: Bearer <JWT> (usager).
 // Utilisé par /observations pour permettre à la fois la collecte automatisée (bridge/import)
 // et la soumission manuelle depuis l'application cliente (Phase 2).
@@ -47,9 +71,8 @@ async function resolveAuth(req, res, next) {
       return res.status(401).json({ success: false, error: 'Authentification manquante (x-api-key ou Authorization: Bearer requis)' });
     }
 
-    const db = getDb();
-
     if (apiKey) {
+      const db = getDb();
       const device = await db.collection('devices').findOne({ apiKey });
       if (!device || !safeEqual(device.apiKey, apiKey)) {
         return res.status(403).json({ success: false, error: 'Clé API invalide' });
@@ -58,21 +81,29 @@ async function resolveAuth(req, res, next) {
       return next();
     }
 
-    const [scheme, token] = authHeader.split(' ');
-    if (scheme !== 'Bearer' || !token) {
-      return res.status(401).json({ success: false, error: 'En-tête Authorization mal formé (attendu: Bearer <token>)' });
+    const { user, error } = await resolveUserFromHeader(authHeader);
+    if (error) {
+      return res.status(error.status).json({ success: false, error: error.message });
     }
 
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch {
-      return res.status(403).json({ success: false, error: 'Jeton invalide ou expiré' });
+    req.user = user;
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// Middleware usager strict (JWT uniquement) : utilisé par /me, où une clé API device n'a pas de sens.
+async function requireUser(req, res, next) {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+      return res.status(401).json({ success: false, error: 'Authentification manquante (Authorization: Bearer requis)' });
     }
 
-    const user = await db.collection('users').findOne({ _id: new ObjectId(payload.sub) });
-    if (!user) {
-      return res.status(403).json({ success: false, error: 'Usager introuvable' });
+    const { user, error } = await resolveUserFromHeader(authHeader);
+    if (error) {
+      return res.status(error.status).json({ success: false, error: error.message });
     }
 
     req.user = user;
@@ -83,4 +114,4 @@ async function resolveAuth(req, res, next) {
 }
 
 export default authMiddleware;
-export { resolveAuth };
+export { resolveAuth, requireUser };
