@@ -21,6 +21,7 @@ function buildDoc(obs) {
     hour: ts.getHours(),
     dayOfWeek: ts.getDay(),
     deviceId: null,
+    authorId: null,
     timestamp: ts,
     receivedAt: ts,
     source: 'manual-import'
