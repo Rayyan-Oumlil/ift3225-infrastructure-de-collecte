@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 
-// Règle de sécurité du repo : jamais de secret en dur — JWT_SECRET vient de l'environnement.
+// Règle de sécurité du repo : jamais de secret en dur, JWT_SECRET vient de l'environnement.
 const JWT_SECRET = process.env.JWT_SECRET;
 const EXPIRES_IN = '7d';
 
 if (!JWT_SECRET) {
-  console.warn('JWT_SECRET manquant dans .env — l\'authentification usager échouera.');
+  console.warn('JWT_SECRET manquant dans .env, l\'authentification usager échouera.');
 }
 
 export function signToken(user) {

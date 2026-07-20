@@ -7,7 +7,7 @@ import { signToken } from '../lib/jwt.js';
 const router = express.Router();
 const SALT_ROUNDS = 10;
 
-// POST /auth/register — create a user account, receive a JWT
+// POST /auth/register : create a user account, receive a JWT
 router.post('/register', async (req, res) => {
   try {
     const valid = validate(req.body);
@@ -34,7 +34,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /auth/login — verify credentials, receive a JWT
+// POST /auth/login : verify credentials, receive a JWT
 router.post('/login', async (req, res) => {
   try {
     const valid = validate(req.body);
