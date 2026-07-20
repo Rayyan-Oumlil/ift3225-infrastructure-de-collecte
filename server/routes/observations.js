@@ -1,12 +1,13 @@
 import express from 'express';
 import { getDb } from '../db.js';
-import authMiddleware from '../middleware/auth.js';
+import { resolveAuth } from '../middleware/auth.js';
 import validate from '../schemas/observation.js';
 
 const router = express.Router();
 
-// POST /observations — record a manual environmental observation
-router.post('/', authMiddleware, async (req, res) => {
+// POST /observations : record a manual environmental observation
+// Accepte soit un device (x-api-key), soit un usager connecté (Authorization: Bearer <JWT>).
+router.post('/', resolveAuth, async (req, res) => {
   try {
     const valid = validate(req.body);
     if (!valid) {
@@ -23,7 +24,8 @@ router.post('/', authMiddleware, async (req, res) => {
       notes: req.body.notes ?? null,
       hour: ts.getHours(),
       dayOfWeek: ts.getDay(),
-      deviceId: req.device._id,
+      deviceId: req.device?._id ?? null,
+      authorId: req.user?._id ?? null,
       timestamp: ts,
       receivedAt
     };
