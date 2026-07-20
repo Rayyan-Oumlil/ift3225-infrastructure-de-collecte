@@ -5,9 +5,6 @@ import validate from '../schemas/location.js';
 const router = express.Router();
 
 // POST /locations — register (or update) a location's coordinates
-// NOTE: intentionally unprotected, same precedent as POST /devices in Phase 1 —
-// documented in the report. Upsert by name so a typo-free re-registration
-// simply updates the coordinates instead of creating a duplicate.
 router.post('/', async (req, res) => {
   try {
     const valid = validate(req.body);
