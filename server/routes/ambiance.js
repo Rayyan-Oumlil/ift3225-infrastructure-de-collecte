@@ -111,7 +111,7 @@ router.get('/:location/history', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: { location, period: req.query.last || '3h', history }
+      data: { location, period: req.query.last || '3h', scale: getScale(), history }
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
