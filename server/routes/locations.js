@@ -4,7 +4,6 @@ import validate from '../schemas/location.js';
 
 const router = express.Router();
 
-// POST /locations — register (or update) a location's coordinates
 router.post('/', async (req, res) => {
   try {
     const valid = validate(req.body);
@@ -29,7 +28,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /locations — list all known locations with coordinates
 router.get('/', async (req, res) => {
   try {
     const db = getDb();
