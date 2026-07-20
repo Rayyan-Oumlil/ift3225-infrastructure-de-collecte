@@ -10,6 +10,11 @@ const devices = [
   { name: 'phone-ios', location: 'cafe-brunch', apiKey: 'demo-key-00000002', createdAt: hoursAgo(24) }
 ];
 
+// Petinos, 6180 Boul Henri-Bourassa E, Montréal-Nord, QC H1G 5X3
+const locations = [
+  { name: 'cafe-brunch', lat: 45.6087219, lng: -73.6127592, createdAt: hoursAgo(24) }
+];
+
 // Spread measurements across the last 6 hours to make history + quiet-hours endpoints useful
 const measurements = [
   { type: 'audio', value: 38.4, location: 'cafe-brunch', timestamp: hoursAgo(6.0), receivedAt: hoursAgo(6.0) },
@@ -66,14 +71,16 @@ async function seed() {
   await Promise.all([
     db.collection('devices').deleteMany({}),
     db.collection('measurements').deleteMany({}),
-    db.collection('observations').deleteMany({})
+    db.collection('observations').deleteMany({}),
+    db.collection('locations').deleteMany({})
   ]);
 
   await db.collection('devices').insertMany(devices);
   await db.collection('measurements').insertMany(measurements);
   await db.collection('observations').insertMany(observations);
+  await db.collection('locations').insertMany(locations);
 
-  console.log(`Seed terminé : ${devices.length} appareils, ${measurements.length} mesures, ${observations.length} observations.`);
+  console.log(`Seed terminé : ${devices.length} appareils, ${measurements.length} mesures, ${observations.length} observations, ${locations.length} lieux.`);
   console.log('Clés API de démo : demo-key-00000001 / demo-key-00000002');
   process.exit(0);
 }

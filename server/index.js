@@ -5,6 +5,7 @@ import devicesRouter from './routes/devices.js';
 import measurementsRouter from './routes/measurements.js';
 import observationsRouter from './routes/observations.js';
 import ambianceRouter from './routes/ambiance.js';
+import locationsRouter from './routes/locations.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,7 @@ app.use('/devices', devicesRouter);
 app.use('/measurements', measurementsRouter);
 app.use('/observations', observationsRouter);
 app.use('/ambiance', ambianceRouter);
+app.use('/locations', locationsRouter);
 
 app.get('/', (req, res) => {
   res.json({ success: true, data: 'API IFT3225 — Infrastructure de collecte' });
