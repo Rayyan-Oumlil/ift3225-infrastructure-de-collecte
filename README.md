@@ -1,6 +1,6 @@
 # IFT3225 — Infrastructure de collecte d'ambiance
 
-Système de collecte, persistance et consultation de données d'ambiance en quasi temps réel. Un téléphone instrumenté avec Phyphox capte le niveau sonore ambiant ; un bridge transmet ces mesures vers une API REST (Express + MongoDB Atlas) qui les rend interrogeables via des endpoints sémantiques.
+Système de collecte, persistance et consultation de données d'ambiance en quasi temps réel. Un téléphone instrumenté avec Phyphox capte le niveau sonore ambiant ; un bridge transmet ces mesures vers une API REST (Express + MongoDB Atlas) qui les rend interrogeables via des endpoints sémantiques. Un client React (dossier `client/`, Phase 2) consomme cette API : carte des lieux, portrait détaillé, authentification et espace compte.
 
 ## Prérequis
 
@@ -32,16 +32,39 @@ npm start
 
 Le serveur écoute sur `http://localhost:3000` par défaut.
 
+### Lancer le client (Phase 2)
+
+Dans un second terminal, avec le serveur ci-dessus déjà démarré :
+
+```bash
+cd client
+npm install
+cp .env.example .env   # laisser VITE_API_URL vide en dev (proxy Vite vers l'API locale)
+npm run dev
+```
+
+Le client écoute sur `http://localhost:5173` par défaut. Voir [`client/README.md`](client/README.md) pour le détail (structure, configuration, comment tester les actions protégées).
+
 ## Variables d'environnement
+
+### Serveur (`.env` à la racine)
+
 | Variable | Description | Utilisé par |
 |----------|-------------|-------------|
 | `MONGO_URI` | URI de connexion MongoDB Atlas | serveur, seed, import |
 | `PORT` | Port d'écoute du serveur (défaut : 3000) | serveur |
+| `JWT_SECRET` | Secret de signature des JWT usagers (chaîne aléatoire, jamais commitée) | `/auth`, `/me`, `/observations` (JWT) |
 | `PHYPHOX_IP` | IP du téléphone exécutant Phyphox (accès distant) | bridge |
 | `PHYPHOX_PORT` | Port du serveur Phyphox (défaut : 8080, souvent 80) | bridge |
 | `API_KEY` | Clé API d'un device enregistré (`POST /devices`) | bridge |
 | `SERVER_URL` | URL de l'API ciblée par le bridge (défaut : `http://localhost:3000`) | bridge |
 | `LOCATION` | Identifiant du lieu de collecte | bridge |
+
+### Client (`client/.env`)
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | URL de l'API. Vide en dev (proxy Vite) ; URL publique en production |
 
 ## Données de collecte
 
@@ -71,12 +94,31 @@ npm run import:obs       # importe les observations environnementales
 | `POST` | `/devices` | Enregistrer un appareil, obtenir une clé API |
 | `GET` | `/devices` | Lister les appareils enregistrés |
 
-### Collecte (authentification requise — `x-api-key`)
+### Lieux
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| `POST` | `/measurements` | Envoyer une mesure sonore (Phyphox) |
-| `POST` | `/observations` | Envoyer une observation environnementale |
+| `POST` | `/locations` | Créer ou mettre à jour un lieu (`name`, `lat`, `lng`) |
+| `GET` | `/locations` | Lister les lieux (utilisé par la vue carte) |
+
+### Comptes usagers (Phase 2)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| `POST` | `/auth/register` | — | Créer un compte, recevoir un JWT |
+| `POST` | `/auth/login` | — | S'authentifier, recevoir un JWT |
+| `GET` | `/me` | JWT | Profil de l'usager connecté |
+| `GET` | `/me/observations` | JWT | Contributions de l'usager |
+| `GET` | `/me/locations` | JWT | Lieux où l'usager a soumis une observation |
+| `POST` | `/me/favorites` | JWT | Ajouter un lieu favori |
+| `DELETE` | `/me/favorites/:location` | JWT | Retirer un lieu favori |
+
+### Collecte (authentification requise)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| `POST` | `/measurements` | `x-api-key` (device) | Envoyer une mesure sonore (Phyphox) |
+| `POST` | `/observations` | `x-api-key` **ou** `Authorization: Bearer <JWT>` | Envoyer une observation environnementale (device automatisé ou usager connecté — l'observation est liée à l'auteur si soumise via JWT) |
 
 ### Consultation sémantique
 
@@ -88,7 +130,9 @@ npm run import:obs       # importe les observations environnementales
 
 ## Authentification
 
-Les endpoints d'écriture exigent une clé API dans l'en-tête HTTP :
+Deux mécanismes coexistent, pour deux usages différents :
+
+**Appareils de collecte** — clé API dans l'en-tête HTTP, sur `/measurements` et (en alternative au JWT) `/observations` :
 
 ```
 x-api-key: <votre-cle>
@@ -98,6 +142,17 @@ x-api-key: <votre-cle>
 - `403` — clé invalide ou appareil inconnu
 
 Obtenir une clé : `POST /devices` avec `{ "name": "mon-telephone", "location": "cafe-brunch" }`.
+
+**Usagers (client Phase 2)** — jeton JWT dans l'en-tête HTTP, sur `/me/*` et (en alternative à la clé API) `/observations` :
+
+```
+Authorization: Bearer <jeton>
+```
+
+- `401` — en-tête absent ou mal formé
+- `403` — jeton invalide/expiré, ou usager introuvable
+
+Obtenir un jeton : `POST /auth/register` ou `POST /auth/login` avec `{ "username": "...", "password": "..." }` (mot de passe ≥ 8 caractères).
 
 ## Tests avec Postman
 

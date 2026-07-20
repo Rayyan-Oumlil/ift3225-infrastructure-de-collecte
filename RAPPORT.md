@@ -173,3 +173,201 @@ Ces choix (fenêtre de 30 min, 12 tranches, seuil 50 dB / 3 échantillons) sont 
 - Endpoint de comparaison inter-lieux et tendances jour/semaine.
 - Index MongoDB explicites sur `{ location, timestamp }` pour accélérer les agrégations à grande échelle.
 - Tests automatisés (validation, codes de statut, agrégations).
+
+---
+
+# Phase 2 — Consommation et visualisation
+
+**IFT3225 — Livrable 2**
+
+Cette section décrit la conception du client React qui consomme l'API de la phase 1, les extensions apportées à l'infrastructure pour la rendre utilisable par ce client, et les choix de visualisation et d'authentification qui en découlent.
+
+---
+
+## 7. Conception de l'interface
+
+### 7.1 Blocs et vues
+
+Le client (dossier `client/`) est un projet Vite + React + TypeScript séparé du serveur, qui ne communique avec lui que par HTTP. Quatre vues, routées avec React Router :
+
+| Route | Vue | Accès |
+|-------|-----|-------|
+| `/` | Carte des ambiances | public |
+| `/lieux/:name` | Portrait détaillé d'un lieu | public |
+| `/connexion` | Connexion / inscription | public |
+| `/compte` | Espace compte (profil, contributions, favoris, soumission) | protégée (redirige vers `/connexion` si non authentifié) |
+
+### 7.2 Méthodologie : du layout à l'assemblage
+
+Plutôt que de construire les quatre vues indépendamment, nous avons d'abord isolé les briques transverses dont toutes auraient besoin, puis construit chaque vue par-dessus :
+
+1. **Couche client** (`services/api.ts`) et **types** (`types.ts`) — le seul point de contact avec l'API, typé.
+2. **Primitives d'état** (`hooks/useAsync.ts`, `components/AsyncBoundary.tsx`) — chargement / erreur / vide, gérés une seule fois et réutilisés partout.
+3. **Composants d'affichage partagés** (`components/ClassificationBadge.tsx`) — le badge de classification a le même rendu sur la carte, le portrait détaillé et l'espace compte.
+4. Seulement ensuite, les vues elles-mêmes : carte, portrait détaillé, puis authentification/espace compte.
+
+Cet ordre reflète directement le découpage en tickets et en branches Git (`feat/8-scaffold-api` comme base commune, puis `feat/9-carte`, `feat/10-detail` et `feat/11-12-auth-compte` construites chacune par-dessus) : aucune vue ne duplique la gestion d'état ou d'erreurs, et une nouvelle vue future n'aurait qu'à composer les mêmes primitives.
+
+### 7.3 Décomposition en composants
+
+```
+src/
+├─ services/api.ts       couche client isolée
+├─ types.ts               miroir du contrat de l'API
+├─ context/AuthContext.tsx  état d'authentification global
+├─ hooks/useAsync.ts      chargement / erreur / vide
+├─ components/            AsyncBoundary, ClassificationBadge — réutilisables
+├─ lib/marker.ts          icône Leaflet colorée selon la classification
+└─ pages/                 MapPage, DetailPage, LoginPage, AccountPage — assemblage par route
+```
+
+---
+
+## 8. Consommation de l'API
+
+### 8.1 La couche client
+
+Toute communication avec l'API passe par `services/api.ts` : aucun composant n'appelle `fetch` directement. Une fonction `request<T>()` centralise l'en-tête `Authorization`, le parsing de l'enveloppe `{ success, data | error }`, et la distinction entre trois familles d'échec :
+
+- **panne réseau** (API injoignable, `status 0`) ;
+- **404** — traité comme un cas *vide*, pas une erreur (voir §8.3) ;
+- **autre code HTTP** — erreur applicative, message affiché tel que renvoyé par l'API.
+
+Cette distinction est portée par la classe `ApiError` (`status`, `notFound`) et consommée par `useAsync`, qui bascule l'état de la vue vers `empty` plutôt que `error` sur un 404.
+
+### 8.2 Endpoints utilisés
+
+| Fonction cliente | Endpoint |
+|---|---|
+| `getLocations` | `GET /locations` |
+| `getSnapshot` / `getHistory` / `getQuietHours` | `GET /ambiance/:location/*` |
+| `getLocationsWithAmbiance` | `GET /locations` + un `snapshot` par lieu |
+| `register` / `login` | `POST /auth/register` / `POST /auth/login` |
+| `getMe` / `getMyObservations` / `getMyLocations` | `GET /me`, `/me/observations`, `/me/locations` |
+| `addFavorite` / `removeFavorite` | `POST` / `DELETE /me/favorites/:location` |
+| `postObservation` | `POST /observations` (`Authorization: Bearer`) |
+
+`getLocationsWithAmbiance` mérite une note : en l'absence d'un endpoint agrégé côté serveur, la carte doit interroger un `snapshot` par lieu pour connaître sa classification courante. Acceptable à l'échelle de 3 lieux, mais **ne passerait pas à l'échelle** — documenté comme limite en §13.
+
+### 8.3 Gestion des erreurs et des cas limites
+
+- **Aucune donnée pour un lieu** (`history`/`quiet-hours` en 404) → état **vide**, pas une bannière d'erreur rouge. Une absence de mesure n'est pas un dysfonctionnement.
+- **Aucune mesure récente pour le portrait courant** (`snapshot.audio === null`) → affiché explicitement (« Pas de mesure sonore dans les 30 dernières minutes »), sans bloquer l'affichage de la dernière observation environnementale disponible.
+- **Panne réseau** (API non démarrée) → message dédié invitant à vérifier que l'API tourne, avec un bouton **Réessayer**.
+- **Écriture protégée sans jeton valide** (jeton expiré) → l'usager est silencieusement déconnecté (`AuthContext` efface le jeton et repasse à l'état anonyme) plutôt que de laisser l'interface dans un état incohérent.
+
+---
+
+## 9. Visualisation
+
+### 9.1 Deux représentations complémentaires
+
+- **Vue carte** (`react-leaflet` + tuiles OpenStreetMap, aucune clé/jeton requis) — un marqueur par lieu, coloré selon la classification renvoyée par son `snapshot` ; clic → portrait détaillé.
+- **Vue détaillée** — badge de classification, graphe d'historique (Recharts, sélecteur de période 1h/3h/12h/1d) et liste des créneaux calmes, tels que renvoyés par l'API.
+
+### 9.2 Seuils et unités : lisibilité sans documentation externe
+
+Aucun seuil n'est recalculé côté client : la classification (`calme`/`modéré`/`animé`/`bruyant`), les moyennes en dB et les heures calmes proviennent directement des réponses de l'API. Le client se contente d'un mapping couleur → classification pour l'affichage (badge, marqueur), cohérent sur toutes les vues.
+
+### 9.3 Justification du seuil de fraîcheur (carte)
+
+**Seuil retenu : 30 minutes.** Un marqueur est affiché en gris — « aucune mesure récente » — si le `snapshot` du lieu ne contient pas de bloc `audio`.
+
+Ce seuil n'est pas un nombre arbitraire choisi côté client : il est **directement aligné sur la fenêtre de calcul du portrait courant côté serveur**, qui moyenne les mesures des 30 dernières minutes (`GET /ambiance/:location/snapshot`, phase 1, §5). Si le serveur lui-même ne trouve aucune mesure dans cette fenêtre, il n'y a par construction rien de significatif à classifier : le client ne fait que refléter fidèlement cette réalité plutôt que d'inventer un second seuil indépendant qui risquerait de désaccorder l'affichage de l'interprétation serveur.
+
+### 9.4 Ce qui a été écarté
+
+- **Comparaison de plusieurs lieux sur un même graphe** — chaque vue détaillée reste centrée sur un seul lieu ; une vue comparative est identifiée comme évolution possible (§13).
+- **Endpoint d'agrégation dédié pour la carte** — en son absence, la carte assemble elle-même `locations` + N `snapshot` ; un endpoint serveur dédié serait plus efficace à grande échelle.
+- **Clustering des marqueurs** — non nécessaire à l'échelle actuelle (3 lieux) ; deviendrait pertinent avec un plus grand nombre de lieux.
+
+---
+
+## 10. Authentification et espace compte
+
+### 10.1 Flux côté client
+
+```mermaid
+sequenceDiagram
+  participant U as Usager
+  participant C as Client React
+  participant S as Serveur
+  U->>C: remplit connexion/inscription
+  C->>S: POST /auth/login ou /auth/register
+  S-->>C: { id, username, token }
+  C->>C: persiste le jeton (localStorage), redirige vers /compte
+  C->>S: GET /me (Authorization: Bearer)
+  S-->>C: profil { username, favoriteLocations, createdAt }
+  Note over C: topbar reflète l'état connecté
+```
+
+### 10.2 Actions protégées
+
+Deux actions exigent un jeton valide : **soumettre une observation** (`POST /observations`) et **gérer ses favoris** (`POST`/`DELETE /me/favorites`). Les deux sont rendues dans l'espace compte, inaccessible tant que l'usager n'est pas authentifié (`AccountPage` redirige vers `/connexion` si l'état est `anonymous`).
+
+### 10.3 Conservation du justificatif
+
+Le jeton JWT est conservé en **`localStorage`**. Compromis assumé pour un projet de cette envergure : plus simple qu'un cookie `httpOnly` (pas de serveur de sessions à maintenir), mais exposé en cas de faille XSS — un cookie `httpOnly` serait préférable en production. Au chargement, le client tente de réhydrater le profil via `GET /me` ; un jeton expiré ou invalide provoque une déconnexion silencieuse plutôt qu'une erreur visible.
+
+### 10.4 État reflété dans l'interface
+
+La barre supérieure affiche soit **le nom d'usager** (connecté, lien vers `/compte`), soit **« Se connecter »** (anonyme, lien vers `/connexion`) — jamais les deux, jamais un état intermédiaire ambigu. Après une soumission d'observation réussie, le récapitulatif des contributions et « mes lieux » se rechargent **immédiatement**, sans rechargement de page (un compteur de rafraîchissement est propagé de `SubmitObservationCard` vers `ContributionsCard`/`MyLocationsCard`).
+
+### 10.5 Extension du modèle : lier une observation à son auteur
+
+La phase 1 ne portait aucune notion d'usager. Le modèle `observations` a été étendu d'un champ `authorId`, jamais fourni par le client : il est dérivé côté serveur du jeton JWT vérifié (middleware `resolveAuth`), ce qui rend impossible pour un client malveillant de s'attribuer les contributions d'un autre usager. C'est cette extension qui rend possibles le récapitulatif des contributions (`GET /me/observations`) et la notion de « ses lieux » (`GET /me/locations`, lieux distincts où l'usager a une observation).
+
+---
+
+## 11. Mise à jour de l'infrastructure
+
+### 11.1 Coordonnées des lieux
+
+Ajout d'une collection `locations` (`name`, `lat`, `lng`) et des endpoints `POST`/`GET /locations` (upsert par nom). La phase 1 traitait `location` comme une simple chaîne portée par chaque mesure/observation, sans stockage propre (voir Phase 1, §1.2) ; cette extension **ajoute** une entité sans toucher au champ `location` existant sur `measurements`/`observations`, qui continue de fonctionner tel quel.
+
+### 11.2 Auteur des observations
+
+Middleware hybride ajouté sur `POST /observations` (`resolveAuth`) : accepte **soit** `x-api-key` (device — comportement de la phase 1, inchangé), **soit** `Authorization: Bearer <JWT>` (usager, phase 2). Le document inséré porte désormais `deviceId` **ou** `authorId` selon la voie empruntée, jamais les deux. Le bridge Phyphox et les scripts d'import n'ont nécessité **aucune modification**.
+
+### 11.3 Classification exposée
+
+Un tableau `scale` (`label`, `minDb`, `maxDb`) a été ajouté aux réponses de `snapshot` et `history`, portant les seuils utilisés par `classifyDb` côté serveur. Le client peut ainsi afficher une légende fidèle aux seuils réels sans les dupliquer en dur dans son propre code — évite la dérive entre les deux si les seuils sont un jour ajustés.
+
+### 11.4 Préservation de la collecte et des lectures existantes
+
+Aucun champ n'a été retiré ni renommé. `POST /measurements` et les lectures `GET /ambiance/*` de la phase 1 sont inchangées. Les nouveaux espaces (`/auth`, `/me`) sont strictement additifs. Vérifié concrètement : le bridge (`npm run bridge`) et les scripts d'import (`npm run import:phyphox`, `npm run import:obs`) fonctionnent sans modification après ces changements.
+
+---
+
+## 12. Réactivité et utilisabilité
+
+### 12.1 États gérés
+
+Chaque vue passe explicitement par quatre états, jamais implicites : **chargement**, **erreur** (avec action de reprise), **vide**, **succès**. Centralisés dans `useAsync` + `AsyncBoundary`, réutilisés sur toutes les vues plutôt que réimplémentés à chaque écran — garantit un comportement uniforme et évite l'oubli d'un cas sur une vue en particulier.
+
+### 12.2 Transparence
+
+Les messages d'erreur affichés proviennent directement du champ `error` de l'API (pas de code d'erreur brut ni de pile d'appels exposée). Le seuil de fraîcheur (30 min) et le seuil de fiabilité des créneaux calmes (3 échantillons minimum, hérité de la phase 1) sont énoncés dans l'interface elle-même plutôt que laissés implicites.
+
+### 12.3 Heuristiques retenues
+
+- **Un lieu sans mesure récente reste visible sur la carte** (marqueur gris), plutôt que d'être masqué — exigence explicite de l'énoncé, et cohérent avec l'idée qu'un lieu « silencieux » est une information en soi.
+- **Vide ≠ erreur** : distinction systématique entre absence de données et échec technique, tant dans la couche API que dans l'affichage.
+- **Rafraîchissement immédiat après écriture** plutôt qu'une invitation à recharger la page manuellement.
+
+---
+
+## 13. Limites et évolution (Phase 2)
+
+**Compromis assumés.**
+- Coordonnées de lieu actuellement approximatives pour les lieux importés de la phase 1, en attendant la collecte physique (#7) avec coordonnées réelles.
+- Jeton JWT en `localStorage` plutôt qu'en cookie `httpOnly` (§10.3).
+- Carte assemblée côté client à partir de N appels `snapshot` plutôt qu'un endpoint agrégé dédié — ne passerait pas à l'échelle au-delà de quelques dizaines de lieux.
+
+**Ce qui changerait avec plus de temps.**
+- Endpoint serveur agrégé pour la carte (un appel plutôt que N).
+- Mise à jour optimiste des favoris (retour visuel immédiat avant confirmation serveur).
+- Tests automatisés côté client (Vitest + Testing Library) sur la couche API et les composants d'état.
+- Passe d'accessibilité sur les marqueurs de carte : la classification n'est aujourd'hui portée que par la couleur, un indicateur textuel/iconographique la rendrait lisible aux usagers daltoniens.
+
+**Bonus.** Aucun des deux bonus (backend TypeScript, temps réel SSE/WebSocket) n'a été réalisé à ce stade.
