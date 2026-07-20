@@ -1,10 +1,10 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { DetailPage } from './pages/DetailPage';
 import './App.css';
 
-// Page d'accueil temporaire : la carte (#9) et le portrait détaillé (#10) branchent
-// leurs propres routes par-dessus ce scaffold.
+// Page d'accueil temporaire : la carte (#9) branche sa propre route sur "/".
 function Home() {
-  return <p className="page">Ambiance IFT3225 — carte et portrait de lieu à venir.</p>;
+  return <p className="page">Ambiance IFT3225 — carte à venir (voir #9).</p>;
 }
 
 export default function App() {
@@ -18,6 +18,7 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/lieux/:name" element={<DetailPage />} />
           <Route path="*" element={<p className="page">Page introuvable.</p>} />
         </Routes>
       </main>
