@@ -1,13 +1,10 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { MapPage } from './pages/MapPage';
+import { DetailPage } from './pages/DetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { AccountPage } from './pages/AccountPage';
 import './App.css';
-
-// Page d'accueil temporaire : la carte (#9) branche sa propre route sur "/".
-function Home() {
-  return <p className="page">Ambiance IFT3225 — carte à venir (voir #9).</p>;
-}
 
 function AuthStatus() {
   const { status, user } = useAuth();
@@ -38,7 +35,8 @@ export default function App() {
         </header>
         <main>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<MapPage />} />
+            <Route path="/lieux/:name" element={<DetailPage />} />
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/compte" element={<AccountPage />} />
             <Route path="*" element={<p className="page">Page introuvable.</p>} />
