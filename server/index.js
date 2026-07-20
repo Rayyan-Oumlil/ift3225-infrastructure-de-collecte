@@ -5,6 +5,7 @@ import devicesRouter from './routes/devices.js';
 import measurementsRouter from './routes/measurements.js';
 import observationsRouter from './routes/observations.js';
 import ambianceRouter from './routes/ambiance.js';
+import authRouter from './routes/auth.js';
 import locationsRouter from './routes/locations.js';
 
 const app = express();
@@ -16,6 +17,7 @@ app.use('/devices', devicesRouter);
 app.use('/measurements', measurementsRouter);
 app.use('/observations', observationsRouter);
 app.use('/ambiance', ambianceRouter);
+app.use('/auth', authRouter);
 app.use('/locations', locationsRouter);
 
 app.get('/', (req, res) => {
