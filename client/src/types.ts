@@ -74,3 +74,35 @@ export interface LocationAmbiance {
   snapshot: Snapshot | null; // null => 404, aucune donnée pour ce lieu
   fresh: boolean; // true si une mesure existe dans la fenêtre de fraîcheur
 }
+
+// ---- Authentification (POST /auth/register, POST /auth/login) ----
+
+export interface AuthPayload {
+  id: string;
+  username: string;
+  token: string;
+}
+
+// GET /me
+export interface MeProfile {
+  id: string;
+  username: string;
+  favoriteLocations: string[];
+  createdAt: string;
+}
+
+// Document complet renvoyé par GET /me/observations (contrairement au résumé
+// imbriqué dans Snapshot.observation).
+export interface ObservationRecord {
+  _id: string;
+  location: string;
+  proximity: Proximity;
+  vibe: Classification;
+  notes: string | null;
+  hour: number;
+  dayOfWeek: number;
+  authorId: string | null;
+  deviceId: string | null;
+  timestamp: string;
+  receivedAt: string;
+}
