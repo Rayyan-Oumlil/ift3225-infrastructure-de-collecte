@@ -41,7 +41,7 @@ Le serveur écoute sur `http://localhost:3000` par défaut.
 | `PHYPHOX_PORT` | Port du serveur Phyphox (défaut : 8080, souvent 80) | bridge |
 | `API_KEY` | Clé API d'un device enregistré (`POST /devices`) | bridge |
 | `SERVER_URL` | URL de l'API ciblée par le bridge (défaut : `http://localhost:3000`) | bridge |
-| `LOCATION` | Identifiant du lieu attaché à chaque mesure (défaut si absent : `cafe-brunch`). Préférer `LOCATION=<lieu> npm run bridge` plutôt que le `.env` | bridge |
+| `LOCATION` | **Obligatoire.** Identifiant du lieu attaché à chaque mesure (`LOCATION=<lieu> npm run bridge` ou dans `.env`) | bridge |
 
 ## Données de collecte
 
@@ -55,11 +55,11 @@ curl -X POST http://localhost:3000/locations \
   -H "Content-Type: application/json" \
   -d '{"name":"mon-lieu","lat":45.49,"lng":-73.56}'
 
-# 2. Configurer PHYPHOX_IP et API_KEY dans .env, puis collecter (2–3 min)
+# 2. Configurer PHYPHOX_IP, API_KEY et LOCATION dans .env (ou en ligne de commande), puis collecter (2–3 min)
 LOCATION=mon-lieu npm run bridge
 ```
 
-Si `LOCATION` est absent, le bridge utilise `cafe-brunch` par défaut. Le lieu indiqué sur `POST /devices` n'est pas repris automatiquement.
+`LOCATION` est **obligatoire** : sans elle, le bridge refuse de démarrer. Le lieu indiqué sur `POST /devices` n'est pas repris automatiquement.
 
 **Important :** `POST /locations` (carte) et `LOCATION` au bridge (mesures) sont deux étapes distinctes. Sans `POST /locations`, les mesures sont bien enregistrées et `/ambiance/:location` fonctionne, mais le lieu n'apparaît pas sur la carte client.
 
@@ -126,9 +126,9 @@ Le script de collecte automatique en temps réel se trouve dans `server/scripts/
 
 ```bash
 # Depuis le même réseau Wi-Fi que le téléphone, avec « Autoriser l'accès distant » activé dans Phyphox
-# Configurer PHYPHOX_IP et API_KEY dans .env
+# Configurer PHYPHOX_IP, API_KEY et LOCATION dans .env
 
-# Recommandé : passer le lieu en ligne de commande
+# Ou passer LOCATION en ligne de commande :
 LOCATION=bureau-autodesk npm run bridge
 ```
 
