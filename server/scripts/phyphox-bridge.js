@@ -6,11 +6,16 @@ const PHYPHOX_PORT = process.env.PHYPHOX_PORT || '8080';
 const PHYPHOX_URL = `http://${PHYPHOX_IP}:${PHYPHOX_PORT}/get?dB&time`;
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const API_KEY = process.env.API_KEY;
-const LOCATION = process.env.LOCATION || 'cafe-brunch';
+const LOCATION = process.env.LOCATION?.trim();
 const INTERVAL_MS = 5000;
 
 if (!API_KEY) {
   console.error('API_KEY manquante. Enregistrez un appareil via POST /devices puis relancez avec API_KEY=<cle>.');
+  process.exit(1);
+}
+
+if (!LOCATION) {
+  console.error('LOCATION manquante. Indiquez le lieu de collecte : LOCATION=<lieu> npm run bridge');
   process.exit(1);
 }
 
@@ -53,5 +58,5 @@ async function poll() {
   }
 }
 
-console.log(`Bridge démarré, Phyphox @ ${PHYPHOX_IP}:${PHYPHOX_PORT}, envoi vers ${SERVER_URL}/measurements toutes les ${INTERVAL_MS / 1000}s`);
+console.log(`Bridge démarré, lieu=${LOCATION}, Phyphox @ ${PHYPHOX_IP}:${PHYPHOX_PORT}, envoi vers ${SERVER_URL}/measurements toutes les ${INTERVAL_MS / 1000}s`);
 setInterval(poll, INTERVAL_MS);
