@@ -18,6 +18,17 @@ function classifyDb(avgDb) {
   return 'bruyant';
 }
 
+// Échelle des seuils utilisés par classifyDb, exposée par l'API pour que le client
+// affiche la classification sans dupliquer ces valeurs de son côté.
+function getScale() {
+  return [
+    { label: 'calme', minDb: 0, maxDb: 45 },
+    { label: 'modéré', minDb: 45, maxDb: 60 },
+    { label: 'animé', minDb: 60, maxDb: 75 },
+    { label: 'bruyant', minDb: 75, maxDb: null }
+  ];
+}
+
 // GET /ambiance/:location/snapshot — current portrait (last 30 min of audio + latest observation)
 router.get('/:location/snapshot', async (req, res) => {
   try {
@@ -43,6 +54,7 @@ router.get('/:location/snapshot', async (req, res) => {
       data: {
         location,
         generatedAt: new Date(),
+        scale: getScale(),
         audio: avgDb !== null ? {
           avgDb: Math.round(avgDb * 10) / 10,
           sampleCount: measurements.length,
@@ -99,7 +111,7 @@ router.get('/:location/history', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: { location, period: req.query.last || '3h', history }
+      data: { location, period: req.query.last || '3h', scale: getScale(), history }
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
