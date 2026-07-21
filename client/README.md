@@ -1,8 +1,8 @@
 # Ambiance IFT3225 — Client (Phase 2)
 
-Application cliente React qui consomme l'API de collecte d'ambiance de la phase 1 :
-carte des lieux avec leur classification sonore courante, portrait détaillé par lieu
-(historique et créneaux calmes), et — à venir — soumission d'observations authentifiée.
+Application cliente React qui consomme l'API de collecte d'ambiance : carte des lieux
+avec leur classification sonore courante, portrait détaillé par lieu (historique et
+créneaux calmes), authentification et espace compte, et soumission d'observations.
 
 ## Prérequis
 
@@ -40,17 +40,33 @@ l'API locale par le proxy Vite (`vite.config.ts`) — aucune configuration CORS 
 
 ```
 src/
-├─ services/api.ts     Couche client isolée (seul point d'appel à l'API)
-├─ types.ts            Types miroir du contrat de l'API
-├─ config.ts           Base URL + seuil de fraîcheur
-├─ hooks/useAsync.ts   États chargement / erreur / vide
-├─ components/         Badge de classification, frontière d'état async
-├─ lib/marker.ts       Marqueur Leaflet coloré selon la classification
-└─ pages/              MapPage (carte), DetailPage (portrait d'un lieu)
+├─ services/api.ts       Couche client isolée (seul point d'appel à l'API)
+├─ types.ts              Types miroir du contrat de l'API
+├─ config.ts             Base URL + seuil de fraîcheur
+├─ context/AuthContext   Jeton JWT, hydratation via GET /me, login/register/logout
+├─ hooks/useAsync.ts     États chargement / erreur / vide
+├─ components/           Badge de classification, frontière d'état async
+├─ lib/marker.ts         Marqueur Leaflet coloré selon la classification
+└─ pages/
+   ├─ MapPage            Carte (lieux, marqueurs colorés)
+   ├─ DetailPage          Portrait d'un lieu (badge, historique, créneaux calmes)
+   ├─ LoginPage           Connexion / inscription
+   └─ AccountPage         Espace compte (profil, contributions, mes lieux, favoris)
 ```
 
-## Actions protégées (à venir)
+## Comment se connecter et tester les actions protégées
 
-La connexion / inscription et la soumission d'observations seront branchées sur les
-endpoints d'authentification JWT dès leur fusion sur `master` (PR backend #18/#19).
-La couche `services/api.ts` expose déjà `postObservation` prête à recevoir le justificatif.
+1. Aller sur `/connexion` — créer un compte (nom d'utilisateur ≥ 3 caractères, mot de
+   passe ≥ 8 caractères) ou se connecter si vous en avez déjà un.
+2. Une fois connecté, le justificatif (JWT) est conservé en `localStorage` et envoyé
+   automatiquement (`Authorization: Bearer <token>`) sur les écritures protégées.
+   La topbar reflète l'état connecté (nom d'utilisateur, lien vers `/compte`) ou
+   déconnecté (lien « Se connecter »).
+3. `/compte` — l'espace compte : profil, formulaire de soumission d'observation,
+   récapitulatif des contributions, « mes lieux » (lieux où une observation a été
+   soumise), et gestion des lieux favoris (ajout/retrait).
+4. Se déconnecter efface le jeton et redirige vers l'état public.
+5. Un accès direct à `/compte` sans être connecté redirige vers `/connexion`
+   (route protégée côté client).
+
+Les lectures (`/`, `/lieux/:name`) restent publiques, sans connexion requise.
