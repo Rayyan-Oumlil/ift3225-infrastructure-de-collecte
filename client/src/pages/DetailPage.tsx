@@ -16,10 +16,17 @@ import { AsyncBoundary } from '../components/AsyncBoundary';
 import { ClassificationBadge } from '../components/ClassificationBadge';
 import type { History, QuietHours, Snapshot } from '../types';
 
-const PERIODS = ['1h', '3h', '12h', '1d'] as const;
+const PERIODS = ['1h', '3h', '12h', '1d', '7d', '30d'] as const;
 
 const hhmm = (iso: string) =>
   new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+
+function formatHistoryTick(iso: string, period: (typeof PERIODS)[number]): string {
+  if (period === '7d' || period === '30d') {
+    return new Date(iso).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+  }
+  return hhmm(iso);
+}
 
 function SnapshotCard({ location }: { location: string }) {
   const state = useAsync<Snapshot>(() => getSnapshot(location), [location]);
@@ -80,10 +87,14 @@ function HistoryCard({ location }: { location: string }) {
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={data.history} margin={{ top: 8, right: 16, bottom: 8, left: -8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="timestamp" tickFormatter={hhmm} fontSize={12} />
+              <XAxis
+                dataKey="timestamp"
+                tickFormatter={(v) => formatHistoryTick(String(v), period)}
+                fontSize={12}
+              />
               <YAxis unit=" dB" domain={['dataMin - 5', 'dataMax + 5']} fontSize={12} />
               <Tooltip
-                labelFormatter={(v) => hhmm(String(v))}
+                labelFormatter={(v) => formatHistoryTick(String(v), period)}
                 formatter={(value) => [`${value} dB`, 'Niveau moyen']}
               />
               <Line type="monotone" dataKey="avgDb" stroke="#1565c0" strokeWidth={2} dot={false} />
