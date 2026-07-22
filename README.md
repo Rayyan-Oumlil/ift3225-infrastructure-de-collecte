@@ -22,15 +22,19 @@ npm install
 # 3. Configurer les variables d'environnement
 cp .env.example .env
 # Éditer .env avec vos valeurs (MONGO_URI, PORT)
+# Pour utiliser nos données de collecte, voir « Base de données » ci-dessous.
 
-# 4. Peupler la base avec des données de démonstration
-npm run seed
-
-# 5. Lancer le serveur
+# 4. Lancer le serveur
 npm start
 ```
 
 Le serveur écoute sur `http://localhost:3000` par défaut.
+
+## Base de données (pour les correcteurs)
+
+Les données réelles collectées (5 lieux avec coordonnées, ~1 250 mesures et les observations associées) vivent sur notre cluster MongoDB Atlas. L'URI de connexion (utilisateur `correcteur`, lecture/écriture) est **fournie dans la remise Studium** ; placez-la dans `MONGO_URI` (`.env` à la racine), puis `npm start`.
+
+> Vous n'avez **rien à importer** : les données sont déjà dans la base. `import:phyphox` et `import:obs` ne servent qu'à (ré)importer les sessions CSV de `data/raw-data/` lors d'une nouvelle collecte. Par défaut ils **ajoutent** (append) les mesures ; les relancer dupliquerait les lignes `cafe-brunch` du CSV. Une réimportation propre est possible via `IMPORT_RESET=1 npm run import:phyphox`, qui supprime d'abord uniquement les documents déjà tagués `source: 'phyphox-import'` (les autres lieux, collectés au bridge, ne sont jamais touchés).
 
 ### Lancer le client (Phase 2)
 
@@ -51,7 +55,7 @@ Le client écoute sur `http://localhost:5173` par défaut. Voir [`client/README.
 
 | Variable | Description | Utilisé par |
 |----------|-------------|-------------|
-| `MONGO_URI` | URI de connexion MongoDB Atlas | serveur, seed, import |
+| `MONGO_URI` | URI de connexion MongoDB Atlas | serveur, import |
 | `PORT` | Port d'écoute du serveur (défaut : 3000) | serveur |
 | `JWT_SECRET` | Secret de signature des JWT usagers (chaîne aléatoire, jamais commitée) | `/auth`, `/me`, `/observations` (JWT) |
 | `PHYPHOX_IP` | IP du téléphone exécutant Phyphox (accès distant) | bridge |
@@ -68,7 +72,7 @@ Le client écoute sur `http://localhost:5173` par défaut. Voir [`client/README.
 
 ## Données de collecte
 
-Trois façons de peupler la base :
+Deux façons de peupler la base (en plus de l'URI fournie ci-dessus) :
 
 - **Temps réel (bridge Phyphox)** — avec le téléphone sur le même réseau Wi-Fi et « Autoriser l'accès distant » activé dans Phyphox :
 
@@ -93,8 +97,6 @@ npm run import:phyphox   # importe les mesures sonores
 npm run import:obs       # importe les observations environnementales
 ```
 
-- **Données de démonstration** — `npm run seed` peuple rapidement la base pour tester les endpoints `/ambiance` sans collecte réelle.
-
 ## Endpoints
 
 ### Gestion des lieux
@@ -110,13 +112,6 @@ npm run import:obs       # importe les observations environnementales
 |---------|----------|-------------|
 | `POST` | `/devices` | Enregistrer un appareil, obtenir une clé API |
 | `GET` | `/devices` | Lister les appareils enregistrés |
-
-### Lieux
-
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| `POST` | `/locations` | Créer ou mettre à jour un lieu (`name`, `lat`, `lng`) |
-| `GET` | `/locations` | Lister les lieux (utilisé par la vue carte) |
 
 ### Comptes usagers (Phase 2)
 
