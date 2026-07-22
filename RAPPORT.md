@@ -8,11 +8,7 @@
 
 > **Pour les correcteurs, accès base de données**
 >
-> ```
-> MONGO_URI=mongodb+srv://correcteur:ift3225-correcteur@phase1.qdtdvpf.mongodb.net/ift3225?retryWrites=true&w=majority
-> ```
->
-> Remplacez la valeur de `MONGO_URI` dans votre `.env` par cette URI avant de lancer `npm start`. Cet utilisateur dispose des droits en lecture et écriture ; vous pouvez donc tester le bridge et les endpoints POST. Pour préserver les données de collecte existantes, évitez de lancer `npm run seed` ou `npm run import:phyphox` (ces scripts réinitialisent les collections).
+> L'URI de connexion MongoDB (utilisateur `correcteur`, lecture/écriture) est fournie dans la remise Studium. Placez-la dans `MONGO_URI` (`.env` à la racine) avant de lancer `npm start` ; vous pouvez alors tester le bridge et les endpoints POST. Les données de collecte sont déjà présentes : aucun import n'est nécessaire (`npm run import:phyphox`/`import:obs` servent uniquement à une nouvelle collecte et ajoutent des documents plutôt que d'en supprimer).
 
 ---
 
@@ -247,7 +243,7 @@ Cette distinction est portée par la classe `ApiError` (`status`, `notFound`) et
 | `addFavorite` / `removeFavorite` | `POST` / `DELETE /me/favorites/:location` |
 | `postObservation` | `POST /observations` (`Authorization: Bearer`) |
 
-`getLocationsWithAmbiance` mérite une note : en l'absence d'un endpoint agrégé côté serveur, la carte doit interroger un `snapshot` par lieu pour connaître sa classification courante. Acceptable à l'échelle de 3 lieux, mais **ne passerait pas à l'échelle** — documenté comme limite en §13.
+`getLocationsWithAmbiance` mérite une note : en l'absence d'un endpoint agrégé côté serveur, la carte doit interroger un `snapshot` par lieu pour connaître sa classification courante. Acceptable à l'échelle de nos 5 lieux, mais **ne passerait pas à l'échelle** — documenté comme limite en §13.
 
 ### 8.3 Gestion des erreurs et des cas limites
 
@@ -263,7 +259,7 @@ Cette distinction est portée par la classe `ApiError` (`status`, `notFound`) et
 ### 9.1 Deux représentations complémentaires
 
 - **Vue carte** (`react-leaflet` + tuiles OpenStreetMap, aucune clé/jeton requis) — un marqueur par lieu, coloré selon la classification renvoyée par son `snapshot` ; clic → portrait détaillé.
-- **Vue détaillée** — badge de classification, graphe d'historique (Recharts, sélecteur de période 1h/3h/12h/1d) et liste des créneaux calmes, tels que renvoyés par l'API.
+- **Vue détaillée** — badge de classification, graphe d'historique (Recharts, sélecteur de période 1h/3h/12h/1d/7d/30d) et liste des créneaux calmes, tels que renvoyés par l'API.
 
 ### 9.2 Seuils et unités : lisibilité sans documentation externe
 
@@ -279,7 +275,7 @@ Ce seuil n'est pas un nombre arbitraire choisi côté client : il est **directem
 
 - **Comparaison de plusieurs lieux sur un même graphe** — chaque vue détaillée reste centrée sur un seul lieu ; une vue comparative est identifiée comme évolution possible (§13).
 - **Endpoint d'agrégation dédié pour la carte** — en son absence, la carte assemble elle-même `locations` + N `snapshot` ; un endpoint serveur dédié serait plus efficace à grande échelle.
-- **Clustering des marqueurs** — non nécessaire à l'échelle actuelle (3 lieux) ; deviendrait pertinent avec un plus grand nombre de lieux.
+- **Clustering des marqueurs** — non nécessaire à l'échelle actuelle (5 lieux) ; deviendrait pertinent avec un plus grand nombre de lieux.
 
 ---
 
@@ -360,7 +356,7 @@ Les messages d'erreur affichés proviennent directement du champ `error` de l'AP
 ## 13. Limites et évolution (Phase 2)
 
 **Compromis assumés.**
-- Coordonnées de lieu actuellement approximatives pour les lieux importés de la phase 1, en attendant la collecte physique (#7) avec coordonnées réelles.
+- Coordonnées des lieux saisies manuellement à l'enregistrement (`POST /locations`) : suffisamment précises pour positionner les marqueurs, mais non issues d'un relevé GPS sur place.
 - Jeton JWT en `localStorage` plutôt qu'en cookie `httpOnly` (§10.3).
 - Carte assemblée côté client à partir de N appels `snapshot` plutôt qu'un endpoint agrégé dédié — ne passerait pas à l'échelle au-delà de quelques dizaines de lieux.
 
@@ -370,4 +366,6 @@ Les messages d'erreur affichés proviennent directement du champ `error` de l'AP
 - Tests automatisés côté client (Vitest + Testing Library) sur la couche API et les composants d'état.
 - Passe d'accessibilité sur les marqueurs de carte : la classification n'est aujourd'hui portée que par la couleur, un indicateur textuel/iconographique la rendrait lisible aux usagers daltoniens.
 
-**Bonus.** Aucun des deux bonus (backend TypeScript, temps réel SSE/WebSocket) n'a été réalisé à ce stade.
+**Bonus réalisé - backend TypeScript.** Le serveur de la phase 1 a été intégralement porté en TypeScript. Le modèle du domaine est typé (`server/types.ts` : `Measurement`, `Observation`, `Device`, `User`, `LocationDoc`, `Classification`, `Proximity`, `ScaleEntry`), de même que la couche d'accès aux données (collections MongoDB paramétrées par leur type, ex. `db.collection<Measurement>('measurements')`) et les routes Express (`Request`/`Response` typés, corps validés par AJV puis affinés par assertion de type). Le contrat entre le serveur et le client, dont `types.ts` côté client est le miroir, est ainsi vérifié à la compilation (`npm run build` via `tsc`), ce qui élimine une classe d'erreurs d'intégration silencieuses entre les deux moitiés du projet.
+
+**Bonus non réalisé - temps réel.** Les mises à jour d'ambiance ne sont pas poussées (SSE/WebSocket) : le client interroge l'API à l'ouverture de chaque vue. Un flux SSE sur `/ambiance/:location` serait l'évolution naturelle, sans changer la couche client (`services/api.ts` resterait le seul point de contact).
