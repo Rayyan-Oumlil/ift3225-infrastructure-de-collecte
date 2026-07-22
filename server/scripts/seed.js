@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { connectDB, getDb } from '../db.js';
+import { connectDB, getDb } from '../../dist/db.js';
 
 function hoursAgo(h) {
   return new Date(Date.now() - h * 3600000);

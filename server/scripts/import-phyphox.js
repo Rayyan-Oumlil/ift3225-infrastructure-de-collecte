@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { connectDB, getDb } from '../db.js';
+import { connectDB, getDb } from '../../dist/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RAW_DATA_DIR = path.resolve(__dirname, '../../data/raw-data');

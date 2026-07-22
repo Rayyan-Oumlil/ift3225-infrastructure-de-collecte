@@ -1,4 +1,5 @@
-import Ajv from 'ajv';
+import { Ajv, type ValidateFunction } from 'ajv';
+
 const ajv = new Ajv();
 
 const schema = {
@@ -8,10 +9,11 @@ const schema = {
     proximity: { type: 'string', enum: ['low', 'medium', 'high'] },
     vibe: { type: 'string', enum: ['calme', 'modéré', 'animé', 'bruyant'] },
     notes: { type: 'string' },
-    timestamp: { type: 'string' }
+    timestamp: { type: 'string' },
   },
   required: ['location', 'proximity', 'vibe'],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
-export default ajv.compile(schema);
+const validate: ValidateFunction = ajv.compile(schema);
+export default validate;

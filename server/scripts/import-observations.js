@@ -2,8 +2,8 @@ import 'dotenv/config';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { connectDB, getDb } from '../db.js';
-import validate from '../schemas/observation.js';
+import { connectDB, getDb } from '../../dist/db.js';
+import validate from '../../dist/schemas/observation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OBSERVATIONS_FILE = path.resolve(__dirname, '../../data/observations.json');

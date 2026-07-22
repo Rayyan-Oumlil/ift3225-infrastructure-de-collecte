@@ -93,6 +93,8 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .portrait {
   display: flex;
@@ -113,12 +115,18 @@ main {
   font-size: 14px;
 }
 
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
 .periods button {
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 6px;
   padding: 3px 10px;
-  margin-left: 4px;
+  margin-left: 0;
   color: var(--muted);
 }
 .periods button.active {
