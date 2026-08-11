@@ -3,6 +3,7 @@ import { getDb } from '../db.js';
 import validate from '../schemas/location.js';
 import type { LocationDoc } from '../types.js';
 import { errorMessage } from '../types.js';
+import { cacheControl } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', cacheControl(300), async (_req: Request, res: Response) => {
   try {
     const db = getDb();
     const locations = await db.collection<LocationDoc>('locations').find({}).toArray();

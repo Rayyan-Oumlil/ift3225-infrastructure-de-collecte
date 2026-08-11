@@ -10,10 +10,11 @@ import {
   parseDuration,
   QUIET_THRESHOLD_DB,
 } from '../services/ambiance.js';
+import { cacheControl } from '../middleware/cache.js';
 
 const router = express.Router();
 
-router.get('/:location/snapshot', async (req: Request, res: Response) => {
+router.get('/:location/snapshot', cacheControl(30), async (req: Request, res: Response) => {
   try {
     const location = req.params.location as string;
     const since = new Date(Date.now() - 30 * 60000);
@@ -36,7 +37,7 @@ router.get('/:location/snapshot', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:location/history', async (req: Request, res: Response) => {
+router.get('/:location/history', cacheControl(60), async (req: Request, res: Response) => {
   try {
     const { location } = req.params;
     const lastParam = typeof req.query.last === 'string' ? req.query.last : undefined;
@@ -66,7 +67,7 @@ router.get('/:location/history', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:location/quiet-hours', async (req: Request, res: Response) => {
+router.get('/:location/quiet-hours', cacheControl(300), async (req: Request, res: Response) => {
   try {
     const { location } = req.params;
 
