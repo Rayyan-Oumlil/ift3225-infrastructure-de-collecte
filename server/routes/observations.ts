@@ -4,6 +4,7 @@ import { resolveAuth } from '../middleware/auth.js';
 import validate from '../schemas/observation.js';
 import type { Classification, Observation, Proximity } from '../types.js';
 import { errorMessage } from '../types.js';
+import { buildObservationDoc } from '../services/observations.js';
 
 const router = express.Router();
 
@@ -24,20 +25,10 @@ router.post('/', resolveAuth, async (req: Request, res: Response) => {
     };
 
     const receivedAt = new Date();
-    const ts = body.timestamp ? new Date(body.timestamp) : receivedAt;
-
-    const doc: Omit<Observation, '_id'> = {
-      location: body.location,
-      proximity: body.proximity,
-      vibe: body.vibe,
-      notes: body.notes ?? null,
-      hour: ts.getHours(),
-      dayOfWeek: ts.getDay(),
-      deviceId: req.device?._id ?? null,
-      authorId: req.user?._id ?? null,
-      timestamp: ts,
+    const doc = buildObservationDoc(
+      { ...body, deviceId: req.device?._id ?? null, authorId: req.user?._id ?? null },
       receivedAt,
-    };
+    );
 
     const db = getDb();
     const result = await db.collection<Omit<Observation, '_id'>>('observations').insertOne(doc);
