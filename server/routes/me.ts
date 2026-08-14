@@ -3,10 +3,12 @@ import { getDb } from '../db.js';
 import { requireUser } from '../middleware/auth.js';
 import type { Observation, User } from '../types.js';
 import { errorMessage } from '../types.js';
+import { noStore } from '../middleware/cache.js';
 
 const router = express.Router();
 
 router.use(requireUser);
+router.use(noStore);
 
 router.get('/', (req: Request, res: Response) => {
   const user = req.user!;
