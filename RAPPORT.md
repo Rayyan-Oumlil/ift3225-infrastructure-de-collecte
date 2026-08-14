@@ -369,3 +369,81 @@ Les messages d'erreur affichés proviennent directement du champ `error` de l'AP
 **Bonus réalisé - backend TypeScript.** Le serveur de la phase 1 a été intégralement porté en TypeScript. Le modèle du domaine est typé (`server/types.ts` : `Measurement`, `Observation`, `Device`, `User`, `LocationDoc`, `Classification`, `Proximity`, `ScaleEntry`), de même que la couche d'accès aux données (collections MongoDB paramétrées par leur type, ex. `db.collection<Measurement>('measurements')`) et les routes Express (`Request`/`Response` typés, corps validés par AJV puis affinés par assertion de type). Le contrat entre le serveur et le client, dont `types.ts` côté client est le miroir, est ainsi vérifié à la compilation (`npm run build` via `tsc`), ce qui élimine une classe d'erreurs d'intégration silencieuses entre les deux moitiés du projet.
 
 **Bonus non réalisé - temps réel.** Les mises à jour d'ambiance ne sont pas poussées (SSE/WebSocket) : le client interroge l'API à l'ouverture de chaque vue. Un flux SSE sur `/ambiance/:location` serait l'évolution naturelle, sans changer la couche client (`services/api.ts` resterait le seul point de contact).
+
+---
+
+# Phase 3 — Optimiser, déployer, démontrer
+
+Cette section consolide l'infrastructure et le client construits en phases 1 et 2 : fonctionnalité additionnelle, maintenabilité, tests, cache, déploiement et démonstration. Rédigée au fil de l'avancement ; les sous-sections marquées *(à compléter)* le seront une fois les tickets correspondants terminés.
+
+## 14. Fonctionnalité additionnelle
+
+### 14.1 Besoin et justification
+
+Un usager consultant ses lieux favoris doit aujourd'hui ouvrir chacun un par un pour savoir lequel est calme en ce moment — fastidieux dès qu'il en a plus de deux ou trois. `GET /me/favorites/quiet-now` répond directement à la question « lequel de mes favoris est calme maintenant ? », ce qui sert le cas d'usage central de l'application (trouver un endroit calme) sans ajouter de concept nouveau au domaine.
+
+### 14.2 Implémentation
+
+L'endpoint réutilise `buildSnapshot` (`server/services/ambiance.ts`, déjà couvert par les tests du ticket #34) sur chacun des lieux de `favoriteLocations` de l'usager, avec la même fenêtre de fraîcheur de 30 minutes que le portrait courant (`/ambiance/:location/snapshot`) — pas de second seuil indépendant à maintenir. Ne retourne que les noms des lieux dont la classification est `calme`.
+
+*(Affichage côté client — badge sur les favoris dans `AccountPage` — à compléter.)*
+
+## 15. Maintenabilité et réutilisabilité
+
+### 15.1 Backend : séparation logique métier / accès aux données
+
+`server/services/ambiance.ts` et `server/services/observations.ts` isolent le calcul pur (classification, agrégation par intervalle, créneaux calmes, construction du document d'observation) des routes Express, qui ne gardent que l'accès Mongo et la mise en forme de la réponse HTTP. Cette séparation rend les fonctions testables sans serveur ni base de données (voir §16) et évite de dupliquer la logique entre `/ambiance/:location/snapshot` et le nouvel endpoint `/me/favorites/quiet-now`, qui réutilise directement `buildSnapshot`.
+
+### 15.2 Frontend
+
+*(À compléter — store partagé et composants réutilisables, tickets côté client.)*
+
+## 16. Tests des services
+
+Vitest (`npm test`), 21 tests sur les deux services backend :
+
+| Service | Fonctions couvertes | Cas testés |
+|---|---|---|
+| `ambiance.ts` | `parseDuration`, `classifyDb`, `getScale`, `buildSnapshot`, `buildHistory`, `computeQuietHours` | nominal, entrées vides, valeurs aux frontières des seuils, échantillons insuffisants |
+| `observations.ts` | `buildObservationDoc` | dérivation hour/dayOfWeek depuis un timestamp fourni, repli sur `receivedAt`, notes absentes, exclusivité deviceId/authorId |
+
+Rendus testables par la séparation décrite en §15.1 : chaque fonction prend des données déjà en mémoire (mesures, observations, statistiques agrégées) et retourne une valeur, sans effet de bord ni connexion réseau.
+
+## 17. Stratégie de cache
+
+### 17.1 Backend
+
+`server/middleware/cache.ts` (`cacheControl`, `noStore`), appliqué par endpoint :
+
+| Endpoint | Cache-Control | Durée | Justification |
+|---|---|---|---|
+| `GET /ambiance/:location/snapshot` | `public, max-age=30` | 30 s | portrait quasi temps réel |
+| `GET /ambiance/:location/history` | `public, max-age=60` | 60 s | agrégats par intervalle, évoluent moins vite |
+| `GET /ambiance/:location/quiet-hours` | `public, max-age=300` | 5 min | tendance historique, change lentement |
+| `GET /locations` | `public, max-age=300` | 5 min | quasi statique |
+| `GET /me/*` | `no-store` | — | données personnelles liées au JWT |
+
+Invalidation : par expiration (TTL), pas de purge active — les durées sont choisies pour rester en dessous du délai auquel un changement redevient perceptible (ex. la fenêtre de 30 min du snapshot lui-même).
+
+### 17.2 Frontend
+
+*(À compléter — cache côté couche API client, ticket côté client.)*
+
+### 17.3 Ce qui n'est jamais mis en cache
+
+Toutes les écritures (`POST`/`DELETE` — mesures, observations, comptes, favoris) : un cache invalide sur écriture entraînerait un état incohérent entre ce que l'usager vient de soumettre et ce qu'il voit ensuite. Idem pour tout `GET /me/*` : données personnelles liées à un jeton JWT, jamais partageables entre usagers via un cache intermédiaire.
+
+## 18. Déploiement
+
+*(À compléter — backend et frontend sur Render, tickets #41/#42.)*
+
+## 19. Optimisations et faiblesses (Phase 3)
+
+**Optimisations réalisées.**
+- Logique métier extraite en services purs (§15.1), éliminant la duplication entre `/ambiance/:location/snapshot` et `/me/favorites/quiet-now`.
+- Cache HTTP backend sur les endpoints de lecture (§17.1), réduisant la charge sur MongoDB Atlas pour des données qui ne changent pas à chaque requête.
+
+**Faiblesses restantes.**
+- Cache frontend absent pour l'instant — chaque navigation ré-interroge l'API. *(À traiter avec le ticket cache client.)*
+- Pas encore déployé — impossible de mesurer la latence ou la charge réelles avant le ticket de déploiement.
+- `/me/favorites/quiet-now` fait un aller-retour Mongo par lieu favori (`Promise.all`), acceptable pour quelques favoris mais ne passerait pas à l'échelle au-delà d'une dizaine — piste d'atténuation : une agrégation Mongo unique (`$in` sur `location`) si le nombre de favoris devait grandir.
