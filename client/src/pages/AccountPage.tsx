@@ -3,12 +3,14 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { AsyncBoundary } from '../components/AsyncBoundary';
+import { ClassificationBadge } from '../components/ClassificationBadge';
 import {
   addFavorite,
   ApiError,
   getLocations,
   getMyLocations,
   getMyObservations,
+  getQuietFavorites,
   postObservation,
   removeFavorite,
 } from '../services/api';
@@ -64,6 +66,8 @@ function MyLocationsCard({ token, refreshKey }: { token: string; refreshKey: num
 function FavoritesCard({ token }: { token: string }) {
   const { user, refreshUser } = useAuth();
   const locationsState = useAsync<Location[]>(getLocations, []);
+  // Parmi les favoris, lesquels sont calmes maintenant (#39) — rafraîchi avec la liste de favoris.
+  const quietState = useAsync<string[]>(() => getQuietFavorites(token), [token, user?.favoriteLocations.join(',')]);
   const [pending, setPending] = useState<string | null>(null);
 
   async function toggle(name: string, isFavorite: boolean) {
@@ -85,6 +89,7 @@ function FavoritesCard({ token }: { token: string }) {
           <ul className="tag-list">
             {locations.map((loc) => {
               const isFavorite = user?.favoriteLocations.includes(loc.name) ?? false;
+              const isQuietNow = quietState.data?.includes(loc.name) ?? false;
               return (
                 <li key={loc._id}>
                   <button
@@ -95,6 +100,7 @@ function FavoritesCard({ token }: { token: string }) {
                   >
                     {isFavorite ? '★' : '☆'} {loc.name}
                   </button>
+                  {isFavorite && isQuietNow && <ClassificationBadge classification="calme" />}
                 </li>
               );
             })}

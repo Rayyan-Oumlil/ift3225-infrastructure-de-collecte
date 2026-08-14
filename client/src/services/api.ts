@@ -131,6 +131,10 @@ export const removeFavorite = (location: string, token: string) =>
     token,
   });
 
+// Parmi les favoris de l'usager, ceux actuellement classés « calme ».
+export const getQuietFavorites = (token: string) =>
+  request<string[]>('/me/favorites/quiet-now', { token });
+
 // ---- Écriture protégée : soumission d'une observation par un usager connecté ----
 
 export interface ObservationInput {

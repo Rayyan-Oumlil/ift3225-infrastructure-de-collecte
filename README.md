@@ -124,6 +124,7 @@ npm run import:obs       # importe les observations environnementales
 | `GET` | `/me/locations` | JWT | Lieux où l'usager a soumis une observation |
 | `POST` | `/me/favorites` | JWT | Ajouter un lieu favori |
 | `DELETE` | `/me/favorites/:location` | JWT | Retirer un lieu favori |
+| `GET` | `/me/favorites/quiet-now` | JWT | Lieux favoris actuellement calmes (Phase 3) |
 
 ### Collecte (authentification requise)
 
