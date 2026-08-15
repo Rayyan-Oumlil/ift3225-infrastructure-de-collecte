@@ -2,6 +2,15 @@
 
 Système de collecte, persistance et consultation de données d'ambiance en quasi temps réel. Un téléphone instrumenté avec Phyphox capte le niveau sonore ambiant ; un bridge transmet ces mesures vers une API REST (Express + MongoDB Atlas) qui les rend interrogeables via des endpoints sémantiques. Un client React (dossier `client/`, Phase 2) consomme cette API : carte des lieux, portrait détaillé, authentification et espace compte.
 
+## Déploiement (Phase 3)
+
+| Service | Adresse |
+|---|---|
+| API (backend) | https://ift3225-api-jtlc.onrender.com |
+| Client (frontend) | https://ift3225-client-1jx5.onrender.com |
+
+Hébergés sur Render à partir du blueprint [`render.yaml`](render.yaml) (un service web pour l'API, un site statique pour le client), reliés par CORS et configurés par variables d'environnement (`MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN` côté API ; `VITE_API_URL` côté client), servis en HTTPS.
+
 ## Prérequis
 
 - Node.js v20+
