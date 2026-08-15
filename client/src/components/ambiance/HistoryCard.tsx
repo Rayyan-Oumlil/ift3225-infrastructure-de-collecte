@@ -11,13 +11,14 @@ import {
 
 import { useAsync } from '../../hooks/useAsync';
 import { AsyncBoundary } from '../AsyncBoundary';
-import { getHistory } from '../../services/api';
+import { useAmbianceStore } from '../../store/ambianceStore';
 import { PERIODS, formatHistoryTick, type Period } from '../../lib/historyPeriods';
 import type { History } from '../../types';
 
-export function HistoryCard({ location }: { location: string }) {
+export function HistoryCard({ location, refreshKey = 0 }: { location: string; refreshKey?: number }) {
   const [period, setPeriod] = useState<Period>('3h');
-  const state = useAsync<History>(() => getHistory(location, period), [location, period], {
+  const getHistory = useAmbianceStore((s) => s.getHistory);
+  const state = useAsync<History>(() => getHistory(location, period), [location, period, refreshKey], {
     isEmpty: (data) => data.history.length === 0,
   });
 

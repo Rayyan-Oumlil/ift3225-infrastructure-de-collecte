@@ -1,10 +1,11 @@
 import { useAsync } from '../../hooks/useAsync';
 import { AsyncBoundary } from '../AsyncBoundary';
-import { getQuietHours } from '../../services/api';
+import { useAmbianceStore } from '../../store/ambianceStore';
 import type { QuietHours } from '../../types';
 
-export function QuietHoursCard({ location }: { location: string }) {
-  const state = useAsync<QuietHours>(() => getQuietHours(location), [location], {
+export function QuietHoursCard({ location, refreshKey = 0 }: { location: string; refreshKey?: number }) {
+  const getQuietHours = useAmbianceStore((s) => s.getQuietHours);
+  const state = useAsync<QuietHours>(() => getQuietHours(location), [location, refreshKey], {
     isEmpty: (data) => data.quietHours.length === 0,
   });
   return (

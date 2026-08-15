@@ -1,11 +1,12 @@
 import { useAsync } from '../../hooks/useAsync';
 import { AsyncBoundary } from '../AsyncBoundary';
 import { ClassificationBadge } from '../ClassificationBadge';
-import { getSnapshot } from '../../services/api';
+import { useAmbianceStore } from '../../store/ambianceStore';
 import type { Snapshot } from '../../types';
 
-export function SnapshotCard({ location }: { location: string }) {
-  const state = useAsync<Snapshot>(() => getSnapshot(location), [location]);
+export function SnapshotCard({ location, refreshKey = 0 }: { location: string; refreshKey?: number }) {
+  const getSnapshot = useAmbianceStore((s) => s.getSnapshot);
+  const state = useAsync<Snapshot>(() => getSnapshot(location), [location, refreshKey]);
   return (
     <AsyncBoundary state={state} emptyMessage="Aucune mesure récente pour ce lieu.">
       {(snap) => (
