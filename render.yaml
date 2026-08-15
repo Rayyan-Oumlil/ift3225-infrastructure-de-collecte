@@ -6,12 +6,12 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm run build
+    # --include=dev est nécessaire : `tsc` (typescript) est une devDependency, et un
+    # simple `npm install` l'ignorerait si NODE_ENV=production est actif pendant le build.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:
-      - key: NODE_ENV
-        value: production
       # Cluster MongoDB Atlas de l'équipe — à renseigner dans le tableau de bord Render.
       - key: MONGO_URI
         sync: false
@@ -27,7 +27,8 @@ services:
     runtime: static
     # Pas de champ `plan` ici : les sites statiques Render sont servis par CDN,
     # sans palier tarifaire (contrairement aux services web classiques).
-    buildCommand: cd client && npm install && npm run build
+    # --include=dev par précaution : vite/typescript sont aussi des devDependencies ici.
+    buildCommand: cd client && npm install --include=dev && npm run build
     staticPublishPath: client/dist
     envVars:
       # URL publique du service ift3225-api ci-dessus — à renseigner puis redéployer
