@@ -396,7 +396,11 @@ L'endpoint réutilise `buildSnapshot` (`server/services/ambiance.ts`, déjà cou
 
 ### 15.2 Frontend
 
-*(À compléter — store partagé et composants réutilisables, tickets côté client.)*
+**Composants réutilisables.** `AccountPage` et `DetailPage` (auparavant des blocs monolithiques) sont découpées en composants dédiés à une seule carte : `components/account/` (`ContributionsCard`, `MyLocationsCard`, `FavoritesCard`, `SubmitObservationCard`) et `components/ambiance/` (`SnapshotCard`, `HistoryCard`, `QuietHoursCard`). `ProtectedRoute` extrait la garde d'authentification (chargement/anonyme/authentifié), auparavant dupliquée à chaque page nécessitant une connexion.
+
+**Logique partagée factorisée.** `lib/classification.ts` centralise la table couleur ↔ classification, utilisée à la fois par `ClassificationBadge` et par les marqueurs de la carte (`lib/marker.ts`) — une seule source, pas de dérive possible entre les deux rendus. `lib/errors.ts` (`formatApiError`) et `lib/historyPeriods.ts` factorisent des conversions dupliquées entre pages.
+
+**Store.** `store/ambianceStore.ts` (Zustand) centralise l'état partagé des lieux et de leur ambiance : plusieurs composants (carte, favoris, formulaire de soumission) consomment le même état sans le faire transiter par props, et sans refaire chacun le même appel réseau — voir §17.2 pour le rôle de cache du store.
 
 ## 16. Tests des services
 
@@ -427,7 +431,20 @@ Invalidation : par expiration (TTL), pas de purge active — les durées sont ch
 
 ### 17.2 Frontend
 
-*(À compléter — cache côté couche API client, ticket côté client.)*
+`store/ambianceStore.ts` (Zustand) joue un double rôle : état partagé (§15.2) et cache TTL en mémoire, pour les mêmes ressources lues à plusieurs endroits (carte, page détail, favoris) :
+
+| Ressource | TTL | Où | Pourquoi |
+|---|---|---|---|
+| `locations` / `locationsWithAmbiance` | 30 s | mémoire (store) | consultée à l'ouverture de la carte et par `FavoritesCard`/`SubmitObservationCard` — un seul appel réseau au lieu d'un par composant |
+| `snapshot` (par lieu) | 30 s | mémoire (store) | même fenêtre que le cache backend (§17.1) — pas de gain à mettre un TTL client plus long que le TTL serveur |
+| `history` (par lieu + période) | 60 s | mémoire (store) | idem, aligné sur le backend |
+| `quietHours` (par lieu) | 5 min | mémoire (store) | tendance historique, change lentement |
+
+Portée volontairement en mémoire (pas de `localStorage`) : ces données sont dérivées du serveur et sans valeur entre deux sessions ; les persister ajouterait un risque de désynchronisation pour aucun bénéfice. Chaque entrée mémorise la **promesse** en cours plutôt que la valeur résolue, pour dédupliquer les appels concurrents (deux composants demandant le même lieu en même temps ne déclenchent qu'une requête).
+
+**Invalidation.** Par expiration (TTL) et explicitement après une écriture : la soumission d'une observation (`SubmitObservationCard`) et le bouton « Actualiser » (`DetailPage`) appellent `invalidateLocation(location)`, qui purge le snapshot, l'historique, les heures calmes de ce lieu et la vue agrégée de la carte — sans attendre l'expiration naturelle, pour que l'usager voie l'effet de sa propre contribution immédiatement.
+
+**Hors du store.** `GET /me/*` (profil, contributions, favoris, `quiet-now`) n'est **pas** mis en cache côté client — appelé directement via `useAsync`, sans passer par le store. Cohérent avec le backend (§17.3) : des données personnelles n'ont pas vocation à vivre dans un cache partagé, même en mémoire.
 
 ### 17.3 Ce qui n'est jamais mis en cache
 
