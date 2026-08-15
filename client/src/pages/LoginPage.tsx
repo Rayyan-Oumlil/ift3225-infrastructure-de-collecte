@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ApiError } from '../services/api';
+import { formatApiError } from '../lib/errors';
 
 type Mode = 'login' | 'register';
 
@@ -11,8 +11,13 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { login, register } = useAuth();
+  const { status, login, register } = useAuth();
   const navigate = useNavigate();
+
+  // Évite d'afficher le formulaire à un usager déjà connecté (ex. retour en arrière du navigateur).
+  if (status === 'authenticated') {
+    return <Navigate to="/compte" replace />;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +31,7 @@ export function LoginPage() {
       }
       navigate('/compte');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Erreur inattendue');
+      setError(formatApiError(err));
     } finally {
       setSubmitting(false);
     }

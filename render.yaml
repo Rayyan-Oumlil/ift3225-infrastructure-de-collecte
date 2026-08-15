@@ -1,0 +1,39 @@
+# Blueprint Render : backend (API Express) + frontend (client React statique).
+# Voir README.md pour la procédure de déploiement pas à pas.
+services:
+  - type: web
+    name: ift3225-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Cluster MongoDB Atlas de l'équipe — à renseigner dans le tableau de bord Render.
+      - key: MONGO_URI
+        sync: false
+      # Généré automatiquement par Render, jamais commité.
+      - key: JWT_SECRET
+        generateValue: true
+      # URL publique du site statique ci-dessous — à renseigner une fois celui-ci déployé.
+      - key: CORS_ORIGIN
+        sync: false
+
+  - type: web
+    name: ift3225-client
+    runtime: static
+    plan: free
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist
+    envVars:
+      # URL publique du service ift3225-api ci-dessus — à renseigner puis redéployer
+      # (variable injectée au build par Vite, un simple restart ne suffit pas).
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

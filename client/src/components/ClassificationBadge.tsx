@@ -1,4 +1,5 @@
 import type { Classification } from '../types';
+import { classificationColor } from '../lib/classification';
 
 interface Props {
   classification: Classification;
@@ -7,18 +8,11 @@ interface Props {
 
 // Couleur = sémantique du niveau sonore. Échelle exposée par l'API (seuils dB) ;
 // ici on ne fait que mapper la classification reçue vers un rendu.
-const COLORS: Record<Classification, string> = {
-  calme: '#2e7d32',
-  modéré: '#f9a825',
-  animé: '#ef6c00',
-  bruyant: '#c62828',
-};
-
 export function ClassificationBadge({ classification, stale = false }: Props) {
   return (
     <span
       className="badge"
-      style={{ backgroundColor: stale ? '#9e9e9e' : COLORS[classification] }}
+      style={{ backgroundColor: classificationColor(classification, stale) }}
       title={stale ? 'Aucune mesure récente' : `Ambiance : ${classification}`}
     >
       {classification}

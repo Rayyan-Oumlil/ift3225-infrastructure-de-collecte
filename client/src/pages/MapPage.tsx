@@ -2,11 +2,11 @@ import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 
-import { getLocationsWithAmbiance } from '../services/api';
 import { useAsync } from '../hooks/useAsync';
 import { AsyncBoundary } from '../components/AsyncBoundary';
 import { ClassificationBadge } from '../components/ClassificationBadge';
 import { ambianceMarker } from '../lib/marker';
+import { useAmbianceStore } from '../store/ambianceStore';
 import type { LocationAmbiance } from '../types';
 
 // Centre par défaut : Montréal, si aucun lieu n'est encore positionné.
@@ -20,13 +20,25 @@ function centerOf(items: LocationAmbiance[]): [number, number] {
 }
 
 export function MapPage() {
+  const getLocationsWithAmbiance = useAmbianceStore((s) => s.getLocationsWithAmbiance);
+  const invalidateLocationsWithAmbiance = useAmbianceStore((s) => s.invalidateLocationsWithAmbiance);
   const state = useAsync<LocationAmbiance[]>(getLocationsWithAmbiance, [], {
     isEmpty: (data) => data.length === 0,
   });
 
+  function refresh() {
+    invalidateLocationsWithAmbiance();
+    state.reload();
+  }
+
   return (
     <section className="page">
-      <h1>Carte des ambiances</h1>
+      <div className="card-head">
+        <h1>Carte des ambiances</h1>
+        <button type="button" onClick={refresh} disabled={state.status === 'loading'}>
+          Actualiser
+        </button>
+      </div>
       <p className="subtitle">
         Chaque marqueur porte la classification courante du lieu. Les marqueurs gris
         n'ont pas de mesure dans les 30 dernières minutes.

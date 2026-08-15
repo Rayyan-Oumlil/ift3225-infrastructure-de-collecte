@@ -1,5 +1,6 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { MapPage } from './pages/MapPage';
 import { DetailPage } from './pages/DetailPage';
 import { LoginPage } from './pages/LoginPage';
@@ -38,7 +39,14 @@ export default function App() {
             <Route path="/" element={<MapPage />} />
             <Route path="/lieux/:name" element={<DetailPage />} />
             <Route path="/connexion" element={<LoginPage />} />
-            <Route path="/compte" element={<AccountPage />} />
+            <Route
+              path="/compte"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<p className="page">Page introuvable.</p>} />
           </Routes>
         </main>
