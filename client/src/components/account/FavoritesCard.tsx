@@ -3,11 +3,15 @@ import { useAuth } from '../../context/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import { AsyncBoundary } from '../AsyncBoundary';
 import { ClassificationBadge } from '../ClassificationBadge';
-import { addFavorite, getLocations, getQuietFavorites, removeFavorite } from '../../services/api';
+import { addFavorite, getQuietFavorites, removeFavorite } from '../../services/api';
+import { useAmbianceStore } from '../../store/ambianceStore';
 import type { Location } from '../../types';
 
 export function FavoritesCard({ token }: { token: string }) {
   const { user, refreshUser } = useAuth();
+  const getLocations = useAmbianceStore((s) => s.getLocations);
+  // Même cache partagé que SubmitObservationCard : la liste de lieux n'est
+  // récupérée qu'une fois toutes les 30s, pas une fois par carte.
   const locationsState = useAsync<Location[]>(getLocations, []);
   // Parmi les favoris, lesquels sont calmes maintenant (#39) — rafraîchi avec la liste de favoris.
   const quietState = useAsync<string[]>(() => getQuietFavorites(token), [token, user?.favoriteLocations.join(',')]);

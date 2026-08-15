@@ -1,14 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import { useAsync } from '../../hooks/useAsync';
 import { AsyncBoundary } from '../AsyncBoundary';
-import { getLocations, postObservation } from '../../services/api';
+import { postObservation } from '../../services/api';
 import { formatApiError } from '../../lib/errors';
+import { useAmbianceStore } from '../../store/ambianceStore';
 import type { Classification, Location, Proximity } from '../../types';
 
 const PROXIMITIES: Proximity[] = ['low', 'medium', 'high'];
 const VIBES: Classification[] = ['calme', 'modéré', 'animé', 'bruyant'];
 
 export function SubmitObservationCard({ token, onSubmitted }: { token: string; onSubmitted: () => void }) {
+  const getLocations = useAmbianceStore((s) => s.getLocations);
+  const invalidateLocation = useAmbianceStore((s) => s.invalidateLocation);
   const locationsState = useAsync<Location[]>(getLocations, []);
   const [location, setLocation] = useState('');
   const [proximity, setProximity] = useState<Proximity>('medium');
@@ -25,6 +28,9 @@ export function SubmitObservationCard({ token, onSubmitted }: { token: string; o
     setSubmitting(true);
     try {
       await postObservation({ location, proximity, vibe, notes: notes || undefined }, token);
+      // Le portrait courant et l'historique du lieu viennent de changer : on purge
+      // sa part du cache pour que la prochaine lecture (carte, page détail) soit à jour.
+      invalidateLocation(location);
       setSuccess(true);
       setNotes('');
       onSubmitted();
