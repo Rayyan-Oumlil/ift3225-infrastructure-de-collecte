@@ -39,50 +39,57 @@ export function LoginPage() {
 
   return (
     <section className="page page--narrow">
-      <h1>{mode === 'login' ? 'Connexion' : 'Créer un compte'}</h1>
+      <div className="card">
+        <h1>{mode === 'login' ? 'Connexion' : 'Créer un compte'}</h1>
+        <p className="subtitle">
+          {mode === 'login'
+            ? 'Connectez-vous pour contribuer et suivre vos lieux favoris.'
+            : 'Un compte permet de soumettre des observations et de suivre vos lieux favoris.'}
+        </p>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <label>
-          Nom d'utilisateur
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            minLength={3}
-            maxLength={32}
-            required
-            autoComplete="username"
-          />
-        </label>
-        <label>
-          Mot de passe
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-            required
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          />
-        </label>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label>
+            Nom d'utilisateur
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              minLength={3}
+              maxLength={32}
+              required
+              autoComplete="username"
+            />
+          </label>
+          <label>
+            Mot de passe
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={8}
+              required
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            />
+          </label>
 
-        {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{error}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Un instant…' : mode === 'login' ? 'Se connecter' : "S'inscrire"}
+          <button type="submit" disabled={submitting}>
+            {submitting ? 'Un instant…' : mode === 'login' ? 'Se connecter' : "S'inscrire"}
+          </button>
+        </form>
+
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => {
+            setMode(mode === 'login' ? 'register' : 'login');
+            setError(null);
+          }}
+        >
+          {mode === 'login' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
         </button>
-      </form>
-
-      <button
-        type="button"
-        className="link-button"
-        onClick={() => {
-          setMode(mode === 'login' ? 'register' : 'login');
-          setError(null);
-        }}
-      >
-        {mode === 'login' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
-      </button>
+      </div>
     </section>
   );
 }
