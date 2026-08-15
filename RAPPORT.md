@@ -374,7 +374,7 @@ Les messages d'erreur affichés proviennent directement du champ `error` de l'AP
 
 # Phase 3 — Optimiser, déployer, démontrer
 
-Cette section consolide l'infrastructure et le client construits en phases 1 et 2 : fonctionnalité additionnelle, maintenabilité, tests, cache, déploiement et démonstration. Rédigée au fil de l'avancement ; les sous-sections marquées *(à compléter)* le seront une fois les tickets correspondants terminés.
+Cette section consolide l'infrastructure et le client construits en phases 1 et 2 : fonctionnalité additionnelle, maintenabilité, tests, cache et déploiement. Ne manque que la vidéo de démonstration (#44), livrée séparément.
 
 ## 14. Fonctionnalité additionnelle
 
@@ -386,7 +386,7 @@ Un usager consultant ses lieux favoris doit aujourd'hui ouvrir chacun un par un 
 
 L'endpoint réutilise `buildSnapshot` (`server/services/ambiance.ts`, déjà couvert par les tests du ticket #34) sur chacun des lieux de `favoriteLocations` de l'usager, avec la même fenêtre de fraîcheur de 30 minutes que le portrait courant (`/ambiance/:location/snapshot`) — pas de second seuil indépendant à maintenir. Ne retourne que les noms des lieux dont la classification est `calme`.
 
-*(Affichage côté client — badge sur les favoris dans `AccountPage` — à compléter.)*
+Côté client, `FavoritesCard` interroge cet endpoint et affiche `ClassificationBadge` (déjà utilisé sur la carte, §15.2) à côté de chaque favori concerné — réutilise un composant existant plutôt que d'en créer un nouveau pour la même sémantique visuelle.
 
 ## 15. Maintenabilité et réutilisabilité
 
@@ -452,15 +452,35 @@ Toutes les écritures (`POST`/`DELETE` — mesures, observations, comptes, favor
 
 ## 18. Déploiement
 
-*(À compléter — backend et frontend sur Render, tickets #41/#42.)*
+| Service | Adresse | Type Render |
+|---|---|---|
+| API (backend) | https://ift3225-api-jtlc.onrender.com | service web (Node) |
+| Client (frontend) | https://ift3225-client-1jx5.onrender.com | site statique |
+
+**Plateforme.** Render, via le blueprint [`render.yaml`](render.yaml) à la racine du dépôt — un service web pour l'API (`npm install --include=dev && npm run build`, démarré par `npm start`), un site statique pour le client (`cd client && npm install --include=dev && npm run build`, publié depuis `client/dist`). `--include=dev` est nécessaire aux deux : `tsc`/`vite` sont des devDependencies, ignorées par un `npm install` seul quand `NODE_ENV=production` est actif pendant le build.
+
+**Architecture en ligne.** Le client statique appelle l'API via `VITE_API_URL` (injectée au build par Vite — un redéploiement, pas un simple restart, est nécessaire si cette valeur change). L'API autorise l'origine du client via `CORS_ORIGIN`. Les deux services sont servis en HTTPS par défaut sur Render.
+
+**Configuration par variables d'environnement** (`sync: false` dans le blueprint — renseignées dans le tableau de bord Render, jamais commitées) :
+
+| Variable | Service | Description |
+|---|---|---|
+| `MONGO_URI` | API | cluster MongoDB Atlas de l'équipe |
+| `JWT_SECRET` | API | généré automatiquement par Render (`generateValue: true`) |
+| `CORS_ORIGIN` | API | URL du site statique ci-dessus |
+| `VITE_API_URL` | Client | URL du service API ci-dessus |
+
+**Site statique servi comme SPA.** `routes: [{ type: rewrite, source: /*, destination: /index.html }]` dans le blueprint : sans cette règle, un rechargement de page sur une route côté client (ex. `/lieu/cafe-brunch`) renverrait un 404 Render plutôt que l'application React, puisque ce chemin n'existe pas comme fichier statique.
 
 ## 19. Optimisations et faiblesses (Phase 3)
 
 **Optimisations réalisées.**
 - Logique métier extraite en services purs (§15.1), éliminant la duplication entre `/ambiance/:location/snapshot` et `/me/favorites/quiet-now`.
-- Cache HTTP backend sur les endpoints de lecture (§17.1), réduisant la charge sur MongoDB Atlas pour des données qui ne changent pas à chaque requête.
+- Cache HTTP backend sur les endpoints de lecture (§17.1) : vérifié en production, `GET /ambiance/:location/snapshot` renvoie bien `Cache-Control: public, max-age=30` depuis l'API déployée.
+- Cache frontend (store Zustand, §17.2) : déduplique les appels concurrents à la carte, à la page détail et aux favoris, qui consultaient auparavant chacun l'API séparément.
+- Refactorisation en composants réutilisables (§15.2) : `AccountPage` et `DetailPage`, auparavant monolithiques, sont maintenant des assemblages de cartes indépendantes et testables isolément.
 
 **Faiblesses restantes.**
-- Cache frontend absent pour l'instant — chaque navigation ré-interroge l'API. *(À traiter avec le ticket cache client.)*
-- Pas encore déployé — impossible de mesurer la latence ou la charge réelles avant le ticket de déploiement.
+- Palier gratuit Render (service web) : le service API se met en veille après inactivité, la première requête après une pause subit un délai de démarrage à froid — non mesuré précisément, piste d'atténuation : un ping périodique externe (cron) si la latence au premier accès devenait gênante en démonstration.
 - `/me/favorites/quiet-now` fait un aller-retour Mongo par lieu favori (`Promise.all`), acceptable pour quelques favoris mais ne passerait pas à l'échelle au-delà d'une dizaine — piste d'atténuation : une agrégation Mongo unique (`$in` sur `location`) si le nombre de favoris devait grandir.
+- Pas de mise à jour poussée (SSE/WebSocket, déjà noté en Phase 2, §13) : le cache TTL frontend (30-300s) atténue le nombre d'appels mais l'ambiance affichée peut être en retard de quelques dizaines de secondes sur la réalité.
