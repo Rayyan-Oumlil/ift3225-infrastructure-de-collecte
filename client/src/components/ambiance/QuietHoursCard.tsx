@@ -13,7 +13,7 @@ export function QuietHoursCard({ location, refreshKey = 0 }: { location: string;
       <h2>Créneaux calmes</h2>
       <AsyncBoundary
         state={state}
-        emptyMessage="Pas encore assez de mesures pour dégager des heures calmes."
+        emptyMessage="Aucun créneau sous le seuil pour l'instant — soit ce lieu manque encore de mesures, soit il n'a jamais été calme dans les données collectées."
       >
         {(data) => (
           <>
