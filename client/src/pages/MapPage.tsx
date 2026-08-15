@@ -6,8 +6,28 @@ import { useAsync } from '../hooks/useAsync';
 import { AsyncBoundary } from '../components/AsyncBoundary';
 import { ClassificationBadge } from '../components/ClassificationBadge';
 import { ambianceMarker } from '../lib/marker';
+import { CLASSIFICATION_COLORS, STALE_COLOR } from '../lib/classification';
 import { useAmbianceStore } from '../store/ambianceStore';
 import type { LocationAmbiance } from '../types';
+
+// Légende des couleurs de la carte — dérivée de la même source que les marqueurs
+// et le badge (lib/classification.ts), pour ne jamais désynchroniser les deux.
+function MapLegend() {
+  return (
+    <div className="map-legend">
+      {Object.entries(CLASSIFICATION_COLORS).map(([label, color]) => (
+        <span key={label} className="map-legend__item">
+          <span className="map-legend__dot" style={{ backgroundColor: color }} />
+          {label}
+        </span>
+      ))}
+      <span className="map-legend__item">
+        <span className="map-legend__dot" style={{ backgroundColor: STALE_COLOR }} />
+        pas de mesure récente
+      </span>
+    </div>
+  );
+}
 
 // Centre par défaut : Montréal, si aucun lieu n'est encore positionné.
 const MONTREAL: [number, number] = [45.5019, -73.5674];
@@ -50,7 +70,14 @@ export function MapPage() {
         emptyMessage="Aucun lieu enregistré pour le moment."
       >
         {(items) => (
-          <MapContainer center={centerOf(items)} zoom={13} className="map">
+          <>
+            <div className="map-toolbar">
+              <span className="muted">
+                {items.length} lieu{items.length > 1 ? 'x' : ''} enregistré{items.length > 1 ? 's' : ''}
+              </span>
+              <MapLegend />
+            </div>
+            <MapContainer center={centerOf(items)} zoom={13} className="map">
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -79,7 +106,8 @@ export function MapPage() {
                 </Marker>
               );
             })}
-          </MapContainer>
+            </MapContainer>
+          </>
         )}
       </AsyncBoundary>
     </section>
