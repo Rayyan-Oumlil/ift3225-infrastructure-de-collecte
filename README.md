@@ -11,6 +11,8 @@ Système de collecte, persistance et consultation de données d'ambiance en quas
 
 Hébergés sur Render à partir du blueprint [`render.yaml`](render.yaml) (un service web pour l'API, un site statique pour le client), reliés par CORS et configurés par variables d'environnement (`MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN` côté API ; `VITE_API_URL` côté client), servis en HTTPS.
 
+**Vidéo de démonstration (Phase 3) :** https://drive.google.com/file/d/1x_RD1U9EVq_C9an95PKKD27FI1PWGs7D/view?usp=sharing
+
 ## Prérequis
 
 - Node.js v20+
