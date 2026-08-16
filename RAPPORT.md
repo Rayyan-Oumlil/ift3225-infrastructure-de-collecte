@@ -374,7 +374,7 @@ Les messages d'erreur affichés proviennent directement du champ `error` de l'AP
 
 # Phase 3 — Optimiser, déployer, démontrer
 
-Cette section consolide l'infrastructure et le client construits en phases 1 et 2 : fonctionnalité additionnelle, maintenabilité, tests, cache et déploiement. Ne manque que la vidéo de démonstration (#44), livrée séparément.
+Cette section consolide l'infrastructure et le client construits en phases 1 et 2 : fonctionnalité additionnelle, maintenabilité, tests, cache et déploiement.
 
 ## 14. Fonctionnalité additionnelle
 
@@ -484,3 +484,7 @@ Toutes les écritures (`POST`/`DELETE` — mesures, observations, comptes, favor
 - Palier gratuit Render (service web) : le service API se met en veille après inactivité, la première requête après une pause subit un délai de démarrage à froid — non mesuré précisément, piste d'atténuation : un ping périodique externe (cron) si la latence au premier accès devenait gênante en démonstration.
 - `/me/favorites/quiet-now` fait un aller-retour Mongo par lieu favori (`Promise.all`), acceptable pour quelques favoris mais ne passerait pas à l'échelle au-delà d'une dizaine — piste d'atténuation : une agrégation Mongo unique (`$in` sur `location`) si le nombre de favoris devait grandir.
 - Pas de mise à jour poussée (SSE/WebSocket, déjà noté en Phase 2, §13) : le cache TTL frontend (30-300s) atténue le nombre d'appels mais l'ambiance affichée peut être en retard de quelques dizaines de secondes sur la réalité.
+
+## 20. Vidéo de démonstration (Phase 3)
+
+https://drive.google.com/file/d/1x_RD1U9EVq_C9an95PKKD27FI1PWGs7D/view?usp=sharing
